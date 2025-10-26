@@ -15,7 +15,7 @@ class ClienteSerializer(serializers.ModelSerializer):
 
 class BeneficiarioSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Beneficiarios123
+        model = Beneficiario
         fields = ['id', 'nombre_completo', 'parentesco', 'porcentaje', 'fecha_nacimiento']
 
 class PolizaSerializer(serializers.ModelSerializer):
