@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-cqk%^c!@d3w7n-)ezxv)nc7&chc)d-d0sv!64jnw*z@hl0zjvf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    
+]
 
 
 # Application definition
@@ -140,9 +142,27 @@ REST_FRAMEWORK = {
 
 # Configuración CORS (permitir frontend)
 CORS_ALLOWED_ORIGINS = [
+
     "http://localhost:3000",  # React típico
     "http://127.0.0.1:3000",  # React alternativo
     "http://localhost:5173",  # Vite típico
+
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # WARNING Solo desarrollo
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Headers permitidos
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+   # 'ngrok-skip-browser-warning',  # ← Para ngrok
+]
