@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Cliente, Poliza, Beneficiario
+from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago
 from .serializers import ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, BeneficiarioSerializer
 
 # API para Clientes
@@ -45,3 +45,71 @@ def detalle_poliza(request, poliza_id):
             {'error': 'Póliza no encontrada'}, 
             status=status.HTTP_404_NOT_FOUND
         )
+    
+from .serializers import AgenteSerializer, CrearAgenteSerializer
+
+# API para Agentes
+@api_view(['GET', 'POST'])
+def lista_agentes(request):
+    if request.method == 'GET':
+        agentes = Agente.objects.all()
+        serializer = AgenteSerializer(agentes, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = CrearAgenteSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API para agente específico
+@api_view(['GET'])
+def detalle_agente(request, agente_id):
+    try:
+        agente = Agente.objects.get(id=agente_id)
+        serializer = AgenteSerializer(agente)
+        return Response(serializer.data)
+    except Agente.DoesNotExist:
+        return Response(
+            {'error': 'Agente no encontrado'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+
+from .serializers import FacturaSerializer, CrearFacturaSerializer, PagoSerializer, CrearPagoSerializer
+
+# API para Facturas
+@api_view(['GET', 'POST'])
+def lista_facturas(request):
+    if request.method == 'GET':
+        facturas = Factura.objects.all()
+        serializer = FacturaSerializer(facturas, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = CrearFacturaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API para Pagos
+@api_view(['GET', 'POST'])
+def lista_pagos(request):
+    if request.method == 'GET':
+        pagos = Pago.objects.all()
+        serializer = PagoSerializer(pagos, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = CrearPagoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+    #aireyuclose
