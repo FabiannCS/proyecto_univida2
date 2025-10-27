@@ -7,6 +7,14 @@ class Usuario(AbstractUser):
     fecha_registro = models.DateTimeField(auto_now_add=True)
     es_cliente = models.BooleanField(default=False)
     es_agente = models.BooleanField(default=False)
+    rol = models.ForeignKey(  # ← NUEVO CAMPO
+        'Rol', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='usuarios'
+    )
+
     
     class Meta:
         db_table = 'univida_usuario'  # Nombre diferente
@@ -154,3 +162,80 @@ class Agente(models.Model):
         verbose_name = 'Agente'
         verbose_name_plural = 'Agentes'
 
+
+class Siniestro(models.Model):
+    ESTADO_SINIESTRO = [
+        ('reportado', 'Reportado'),
+        ('en_revision', 'En Revisión'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+        ('pagado', 'Pagado'),
+    ]
+    
+    TIPO_SINIESTRO = [
+        ('muerte', 'Muerte'),
+        ('invalidez', 'Invalidez Total'),
+        ('enfermedad', 'Enfermedad Grave'),
+        ('otros', 'Otros'),
+    ]
+    
+    poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='siniestros')
+    numero_siniestro = models.CharField(max_length=50, unique=True)
+    tipo_siniestro = models.CharField(max_length=20, choices=TIPO_SINIESTRO)
+    fecha_siniestro = models.DateField()
+    fecha_reporte = models.DateTimeField(auto_now_add=True)
+    descripcion = models.TextField()
+    monto_reclamado = models.DecimalField(max_digits=12, decimal_places=2)
+    monto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_SINIESTRO, default='reportado')
+    documentos_adjuntos = models.TextField(blank=True, null=True)  # Rutas de archivos
+    resolucion = models.TextField(blank=True, null=True)
+    fecha_resolucion = models.DateField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Siniestro {self.numero_siniestro} - {self.poliza.numero_poliza}"
+    
+    class Meta:
+        db_table = 'univida_siniestro'
+        verbose_name = 'Siniestro'
+        verbose_name_plural = 'Siniestros'
+
+class NotaPoliza(models.Model):
+    TIPO_NOTA = [
+        ('general', 'General'),
+        ('seguimiento', 'Seguimiento'),
+        ('recordatorio', 'Recordatorio'),
+        ('importante', 'Importante'),
+    ]
+    
+    poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='notas')
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    titulo = models.CharField(max_length=200)
+    contenido = models.TextField()
+    tipo_nota = models.CharField(max_length=20, choices=TIPO_NOTA, default='general')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Nota: {self.titulo} - {self.poliza.numero_poliza}"
+    
+    class Meta:
+        db_table = 'univida_nota_poliza'
+        verbose_name = 'Nota de Póliza'
+        verbose_name_plural = 'Notas de Póliza'
+
+
+class Rol(models.Model):
+    nombre = models.CharField(max_length=50, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+    permisos = models.TextField(blank=True, null=True)  # JSON con permisos específicos
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.nombre
+    
+    class Meta:
+        db_table = 'univida_rol'
+        verbose_name = 'Rol'
+        verbose_name_plural = 'Roles'      

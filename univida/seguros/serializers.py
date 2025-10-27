@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Pago, Factura
+from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Pago, Factura, Siniestro, NotaPoliza, Rol
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,3 +87,51 @@ class CrearPagoSerializer(serializers.ModelSerializer):
         fields = ['factura', 'monto_pagado', 'metodo_pago', 'referencia_pago', 'descripcion']
 
 #aireyuclose
+
+
+# Serializers para nuevos modelos
+class SiniestroSerializer(serializers.ModelSerializer):
+    poliza_info = PolizaSerializer(source='poliza', read_only=True)
+    
+    class Meta:
+        model = Siniestro
+        fields = [
+            'id', 'poliza_info', 'numero_siniestro', 'tipo_siniestro',
+            'fecha_siniestro', 'fecha_reporte', 'descripcion', 
+            'monto_reclamado', 'monto_aprobado', 'estado',
+            'documentos_adjuntos', 'resolucion', 'fecha_resolucion'
+        ]
+
+class CrearSiniestroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siniestro
+        fields = [
+            'poliza', 'numero_siniestro', 'tipo_siniestro', 'fecha_siniestro',
+            'descripcion', 'monto_reclamado', 'documentos_adjuntos'
+        ]
+
+class NotaPolizaSerializer(serializers.ModelSerializer):
+    poliza_info = PolizaSerializer(source='poliza', read_only=True)
+    usuario_info = UsuarioSerializer(source='usuario', read_only=True)
+    
+    class Meta:
+        model = NotaPoliza
+        fields = [
+            'id', 'poliza_info', 'usuario_info', 'titulo', 'contenido',
+            'tipo_nota', 'fecha_creacion', 'fecha_actualizacion'
+        ]
+
+class CrearNotaPolizaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotaPoliza
+        fields = ['poliza', 'usuario', 'titulo', 'contenido', 'tipo_nota']
+
+class RolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rol
+        fields = ['id', 'nombre', 'descripcion', 'permisos', 'creado_en', 'actualizado_en']
+
+class CrearRolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rol
+        fields = ['nombre', 'descripcion', 'permisos']
