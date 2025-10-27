@@ -33,19 +33,27 @@ class Poliza(models.Model):
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
+    agente = models.ForeignKey(  # ← CAMPO ACTUALIZADO
+        'Agente', 
+        on_delete=models.SET_NULL,  # ← Cambiado de CASCADE a SET_NULL
+        null=True,                  # ← Agregado
+        blank=True,                 # ← Agregado
+        related_name='polizas'      # ← Agregado
+    )
     numero_poliza = models.CharField(max_length=50, unique=True)
     suma_asegurada = models.DecimalField(max_digits=12, decimal_places=2)
     prima_anual = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_inicio = models.DateField()
     fecha_vencimiento = models.DateField()
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='cotizacion')
+    cobertura = models.TextField(blank=True, null=True)  # ← Agregado campo cobertura
     creado_en = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"Póliza {self.numero_poliza} - {self.cliente}"
     
     class Meta:
-        db_table = 'univida_poliza'  # Nombre diferente
+        db_table = 'univida_poliza'
 
 class Beneficiario(models.Model):
     poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='beneficiarios')
@@ -59,3 +67,30 @@ class Beneficiario(models.Model):
     
     class Meta:
         db_table = 'univida_beneficiario'  # Nombre diferente
+
+
+class Agente(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
+    codigo_agente = models.CharField(max_length=20, unique=True)
+    fecha_contratacion = models.DateField()
+    especialidad = models.CharField(max_length=100, default='Seguros de Vida')
+    comision = models.DecimalField(max_digits=5, decimal_places=2, default=10.0)
+    estado = models.CharField(
+        max_length=20, 
+        choices=[
+            ('activo', 'Activo'),
+            ('inactivo', 'Inactivo'),
+            ('vacaciones', 'De Vacaciones'),
+        ],
+        default='activo'
+    )
+    telefono_oficina = models.CharField(max_length=20, blank=True, null=True)
+    direccion_oficina = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"Agente {self.codigo_agente} - {self.usuario.get_full_name()}"
+    
+    class Meta:
+        db_table = 'univida_agente'
+        verbose_name = 'Agente'
+        verbose_name_plural = 'Agentes'

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Usuario, Cliente, Poliza, Beneficiario
+from .models import Usuario, Cliente, Poliza, Beneficiario, Agente
 
 # Configuración personalizada para Usuario
 @admin.register(Usuario)
@@ -45,3 +45,14 @@ class BeneficiarioAdmin(admin.ModelAdmin):
     def get_poliza(self, obj):
         return obj.poliza.numero_poliza
     get_poliza.short_description = 'Póliza'
+
+# Configuracion para Agente
+@admin.register(Agente)
+class AgenteAdmin(admin.ModelAdmin):
+    list_display = ('codigo_agente', 'get_nombre', 'especialidad', 'comision', 'estado', 'fecha_contratacion')
+    list_filter = ('estado', 'especialidad', 'fecha_contratacion')
+    search_fields = ('codigo_agente', 'usuario__first_name', 'usuario__last_name')
+    
+    def get_nombre(self, obj):
+        return f"{obj.usuario.first_name} {obj.usuario.last_name}"
+    get_nombre.short_description = 'Nombre del Agente'
