@@ -166,5 +166,3 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
    # 'ngrok-skip-browser-warning',  # ← Para ngrok
 ]
-
-#i need see changes in the browses, whit commit?
