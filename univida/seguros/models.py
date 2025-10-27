@@ -55,6 +55,65 @@ class Poliza(models.Model):
     class Meta:
         db_table = 'univida_poliza'
 
+
+# Aireyu
+class Factura(models.Model):
+    ESTADO_FACTURA = [
+        ('pendiente', 'Pendiente'),
+        ('pagada', 'Pagada'),
+        ('vencida', 'Vencida'),
+        ('cancelada', 'Cancelada'),
+    ]
+    
+    poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='facturas')
+    numero_factura = models.CharField(max_length=50, unique=True)
+    monto = models.DecimalField(max_digits=12, decimal_places=2)
+    fecha_emision = models.DateField()
+    fecha_vencimiento = models.DateField()
+    estado = models.CharField(max_length=20, choices=ESTADO_FACTURA, default='pendiente')
+    concepto = models.CharField(max_length=255, default='Prima anual de seguro')
+    
+    def __str__(self):
+        return f"Factura {self.numero_factura} - {self.poliza.numero_poliza}"
+    
+    class Meta:
+        db_table = 'univida_factura'
+        verbose_name = 'Factura'
+        verbose_name_plural = 'Facturas'
+
+class Pago(models.Model):
+    ESTADO_PAGO = [
+        ('pendiente', 'Pendiente'),
+        ('completado', 'Completado'),
+        ('fallido', 'Fallido'),
+        ('reembolsado', 'Reembolsado'),
+    ]
+    
+    METODO_PAGO = [
+        ('transferencia', 'Transferencia Bancaria'),
+        ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('efectivo', 'Efectivo'),
+        ('cheque', 'Cheque'),
+    ]
+    
+    factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name='pagos')
+    monto_pagado = models.DecimalField(max_digits=12, decimal_places=2)
+    fecha_pago = models.DateTimeField(auto_now_add=True)
+    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO)
+    referencia_pago = models.CharField(max_length=100, blank=True, null=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_PAGO, default='completado')
+    descripcion = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"Pago {self.id} - Factura {self.factura.numero_factura}"
+    
+    class Meta:
+        db_table = 'univida_pago'
+        verbose_name = 'Pago'
+        verbose_name_plural = 'Pagos'
+#Aireyuclose
+
+
 class Beneficiario(models.Model):
     poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='beneficiarios')
     nombre_completo = models.CharField(max_length=200)
@@ -94,3 +153,4 @@ class Agente(models.Model):
         db_table = 'univida_agente'
         verbose_name = 'Agente'
         verbose_name_plural = 'Agentes'
+

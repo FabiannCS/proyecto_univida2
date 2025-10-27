@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Usuario, Cliente, Poliza, Beneficiario, Agente
+from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Factura, Pago
 
 # Configuración personalizada para Usuario
 @admin.register(Usuario)
@@ -56,3 +56,28 @@ class AgenteAdmin(admin.ModelAdmin):
     def get_nombre(self, obj):
         return f"{obj.usuario.first_name} {obj.usuario.last_name}"
     get_nombre.short_description = 'Nombre del Agente'
+
+
+@admin.register(Factura)
+class FacturaAdmin(admin.ModelAdmin):
+    list_display = ('numero_factura', 'get_poliza', 'get_cliente', 'monto', 'estado', 'fecha_emision', 'fecha_vencimiento')
+    list_filter = ('estado', 'fecha_emision', 'fecha_vencimiento')
+    search_fields = ('numero_factura', 'poliza__numero_poliza', 'poliza__cliente__usuario__first_name')
+    
+    def get_poliza(self, obj):
+        return obj.poliza.numero_poliza
+    get_poliza.short_description = 'Póliza'
+    
+    def get_cliente(self, obj):
+        return f"{obj.poliza.cliente.usuario.first_name} {obj.poliza.cliente.usuario.last_name}"
+    get_cliente.short_description = 'Cliente'
+
+@admin.register(Pago)
+class PagoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'get_factura', 'monto_pagado', 'metodo_pago', 'estado', 'fecha_pago')
+    list_filter = ('estado', 'metodo_pago', 'fecha_pago')
+    search_fields = ('factura__numero_factura', 'referencia_pago')
+    
+    def get_factura(self, obj):
+        return obj.factura.numero_factura
+    get_factura.short_description = 'Factura'
