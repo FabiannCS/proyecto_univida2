@@ -28,12 +28,10 @@ urlpatterns = [
     path('roles/<int:rol_id>/', views.detalle_rol, name='detalle_rol'),
 
 
-    # URLs para FRONTEND - ¡ESTAS SON LAS IMPORTANTES!
+    # URLs para FRONTEND - con nombres únicos
     path('', views.inicio, name='inicio'),
-    path('clientes/', views.lista_clientes, name='lista_clientes_front'),
-    path('polizas/', views.lista_polizas, name='lista_polizas_front'),
-
-# URLs para detalles
-    path('clientes/<int:cliente_id>/', views.detalle_cliente, name='detalle_cliente'),
-    path('polizas/<int:poliza_id>/detalle/', views.detalle_poliza_front, name='detalle_poliza_front'),
+    path('front/clientes/', views.lista_clientes_front, name='lista_clientes_front'),
+    path('front/clientes/<int:cliente_id>/', views.detalle_cliente, name='detalle_cliente'),
+    path('front/polizas/', views.lista_polizas_front, name='lista_polizas_front'),
+    path('front/polizas/<int:poliza_id>/detalle/', views.detalle_poliza_front, name='detalle_poliza_front'),
 ]

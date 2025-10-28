@@ -22,3 +22,4 @@ urlpatterns = [
     path('api/', include('seguros.urls')),  # ← AGREGAR ESTA LÍNEA
     path('', include('seguros.urls')),       # Frontend 
 ]
+

@@ -37,5 +37,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Ejecutar animación cuando la página cargue
-    //animarContadores();
+    animarContadores();
 });
