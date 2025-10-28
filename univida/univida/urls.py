@@ -20,4 +20,5 @@ from django.urls import path, include  # ← AGREGAR 'include'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('seguros.urls')),  # ← AGREGAR ESTA LÍNEA
+    path('', include('seguros.urls')),       # Frontend 
 ]

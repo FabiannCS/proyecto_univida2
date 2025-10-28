@@ -4,6 +4,35 @@ from rest_framework.response import Response
 from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza, Rol
 from .serializers import ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, BeneficiarioSerializer
 
+
+from django.shortcuts import render #FRONT
+# Vista para página de inicio
+def inicio(request):
+    estadisticas = {
+        'total_clientes': Cliente.objects.count(),
+        'total_polizas': Poliza.objects.count(),
+        'polizas_activas': Poliza.objects.filter(estado='activa').count(),
+        'total_agentes': Agente.objects.count(),
+    }
+    return render(request, 'seguros/inicio.html', {'estadisticas': estadisticas})
+
+# Vista para lista de clientes
+def lista_clientes(request):
+    clientes = Cliente.objects.all()
+    return render(request, 'seguros/lista_clientes.html', {'clientes': clientes})
+
+# Vista para lista de pólizas
+def lista_polizas(request):
+    polizas = Poliza.objects.all()
+    return render(request, 'seguros/lista_polizas.html', {'polizas': polizas})
+
+
+
+
+
+ #END FOR FRONT
+
+
 # API para Clientes
 @api_view(['GET'])
 def lista_clientes(request):
@@ -190,3 +219,33 @@ def detalle_rol(request, rol_id):
         return Response(serializer.data)
     except Rol.DoesNotExist:
         return Response({'error': 'Rol no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+    
+
+
+    #tercera parte
+
+# Vista para detalle de cliente
+def detalle_cliente(request, cliente_id):
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        polizas_cliente = Poliza.objects.filter(cliente=cliente)
+        return render(request, 'seguros/detalle_cliente.html', {
+            'cliente': cliente,
+            'polizas': polizas_cliente
+        })
+    except Cliente.DoesNotExist:
+        return render(request, 'seguros/404.html', status=404)
+
+# Vista para detalle de póliza
+def detalle_poliza_front(request, poliza_id):
+    try:
+        poliza = Poliza.objects.get(id=poliza_id)
+        beneficiarios = poliza.beneficiarios.all()
+        facturas = poliza.facturas.all()
+        return render(request, 'seguros/detalle_poliza.html', {
+            'poliza': poliza,
+            'beneficiarios': beneficiarios,
+            'facturas': facturas
+        })
+    except Poliza.DoesNotExist:
+        return render(request, 'seguros/404.html', status=404)
