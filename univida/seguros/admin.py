@@ -120,4 +120,3 @@ class RolAdmin(admin.ModelAdmin):
 
 
 
-#asd

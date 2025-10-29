@@ -4,9 +4,12 @@ from rest_framework.response import Response
 from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza, Rol
 from .serializers import ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, BeneficiarioSerializer
 
+<<<<<<< HEAD
 
 from django.shortcuts import render #FRONT
 
+=======
+>>>>>>> parent of f417887 (inicio del frontend)
 # API para Clientes
 @api_view(['GET'])
 def lista_clientes(request):
@@ -192,6 +195,7 @@ def detalle_rol(request, rol_id):
         serializer = RolSerializer(rol)
         return Response(serializer.data)
     except Rol.DoesNotExist:
+<<<<<<< HEAD
         return Response({'error': 'Rol no encontrado'}, status=status.HTTP_404_NOT_FOUND)
     
 
@@ -244,3 +248,6 @@ def detalle_poliza_front(request, poliza_id):
         })
     except Poliza.DoesNotExist:
         return render(request, 'seguros/404.html', status=404)
+=======
+        return Response({'error': 'Rol no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+>>>>>>> parent of f417887 (inicio del frontend)

@@ -166,15 +166,3 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
    # 'ngrok-skip-browser-warning',  # ← Para ngrok
 ]
-
-
-
-
-# Para el forntend
-
-
-# Configuración para archivos estáticos
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "seguros/static",
-]

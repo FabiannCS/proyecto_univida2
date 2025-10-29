@@ -26,6 +26,7 @@ urlpatterns = [
     path('notas-poliza/<int:nota_id>/', views.detalle_nota_poliza, name='detalle_nota_poliza'),
     path('roles/', views.lista_roles, name='lista_roles'),
     path('roles/<int:rol_id>/', views.detalle_rol, name='detalle_rol'),
+<<<<<<< HEAD
 
 
     # URLs para FRONTEND - con nombres únicos
@@ -34,4 +35,6 @@ urlpatterns = [
     path('front/clientes/<int:cliente_id>/', views.detalle_cliente, name='detalle_cliente'),
     path('front/polizas/', views.lista_polizas_front, name='lista_polizas_front'),
     path('front/polizas/<int:poliza_id>/detalle/', views.detalle_poliza_front, name='detalle_poliza_front'),
+=======
+>>>>>>> parent of f417887 (inicio del frontend)
 ]
