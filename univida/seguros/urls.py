@@ -25,8 +25,6 @@ urlpatterns = [
     path('siniestros/', views.lista_siniestros, name='lista_siniestros'),
     path('siniestros/<int:siniestro_id>/', views.detalle_siniestro, name='detalle_siniestro'),
     path('notas-poliza/', views.lista_notas_poliza, name='lista_notas_poliza'),
-    path('notas-poliza/<int:nota_id>/', views.detalle_nota_poliza, name='detalle_nota_poliza'),
-    path('roles/', views.lista_roles, name='lista_roles'),
-    path('roles/<int:rol_id>/', views.detalle_rol, name='detalle_rol'),
+    path('notas-poliza/<int:nota_id>/', views.detalle_nota_poliza, name='detalle_nota_poliza')
 
 ]

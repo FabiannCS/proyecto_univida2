@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza, Rol
+from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza
 from .serializers import (
     ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, 
     BeneficiarioSerializer, AgenteSerializer, CrearAgenteSerializer,
@@ -120,8 +120,7 @@ def lista_pagos(request):
 
 from .serializers import (
     SiniestroSerializer, CrearSiniestroSerializer,
-    NotaPolizaSerializer, CrearNotaPolizaSerializer,
-    RolSerializer, CrearRolSerializer
+    NotaPolizaSerializer, CrearNotaPolizaSerializer
 )
 
 # API para Siniestros
@@ -154,20 +153,6 @@ def lista_notas_poliza(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# API para Roles
-@api_view(['GET', 'POST'])
-def lista_roles(request):
-    if request.method == 'GET':
-        roles = Rol.objects.all()
-        serializer = RolSerializer(roles, many=True)
-        return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        serializer = CrearRolSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # APIs para detalles individuales
 @api_view(['GET'])
@@ -188,11 +173,3 @@ def detalle_nota_poliza(request, nota_id):
     except NotaPoliza.DoesNotExist:
         return Response({'error': 'Nota no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['GET'])
-def detalle_rol(request, rol_id):
-    try:
-        rol = Rol.objects.get(id=rol_id)
-        serializer = RolSerializer(rol)
-        return Response(serializer.data)
-    except Rol.DoesNotExist:
-        return Response({'error': 'Rol no encontrado'}, status=status.HTTP_404_NOT_FOUND)

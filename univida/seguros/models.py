@@ -228,19 +228,3 @@ class NotaPoliza(models.Model):
         db_table = 'univida_nota_poliza'
         verbose_name = 'Nota de Póliza'
         verbose_name_plural = 'Notas de Póliza'
-
-
-class Rol(models.Model):
-    nombre = models.CharField(max_length=50, unique=True)
-    descripcion = models.TextField(blank=True, null=True)
-    permisos = models.TextField(blank=True, null=True)  # JSON con permisos específicos
-    creado_en = models.DateTimeField(auto_now_add=True)
-    actualizado_en = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return self.nombre
-    
-    class Meta:
-        db_table = 'univida_rol'
-        verbose_name = 'Rol'
-        verbose_name_plural = 'Roles'      

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza, Rol
+from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza
 
 # Configuración personalizada para Usuario
 @admin.register(Usuario)
@@ -113,10 +113,6 @@ class NotaPolizaAdmin(admin.ModelAdmin):
         return obj.usuario.username
     get_usuario.short_description = 'Usuario'
 
-@admin.register(Rol)
-class RolAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'descripcion', 'creado_en')
-    search_fields = ('nombre', 'descripcion')
 
 
 
