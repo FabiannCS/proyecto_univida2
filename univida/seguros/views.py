@@ -1,8 +1,14 @@
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza, Rol
-from .serializers import ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, BeneficiarioSerializer
+from .serializers import (
+    ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, 
+    BeneficiarioSerializer, AgenteSerializer, CrearAgenteSerializer,
+    FacturaSerializer, CrearFacturaSerializer, PagoSerializer, 
+    CrearPagoSerializer
+)
+
 
 # API para Clientes
 @api_view(['GET'])

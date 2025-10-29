@@ -16,8 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include  # ← AGREGAR 'include'
+from seguros.serializers import MyTokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
+
+# en univida/urls.py
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),
+    
     path('api/', include('seguros.urls')),  # ← AGREGAR ESTA LÍNEA
+
+    # --- AÑADE ESTAS DOS LÍNEAS PARA EL LOGIN ---
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

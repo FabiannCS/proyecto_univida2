@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,16 +41,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'seguros',
+
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
+
+    'seguros',
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # ← AGREGAR ESTA LÍNEA
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -135,6 +140,9 @@ AUTH_USER_MODEL = 'seguros.Usuario'
 
 # Configuración REST Framework
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',  # Para desarrollo
     ]
@@ -145,11 +153,10 @@ CORS_ALLOWED_ORIGINS = [
 
     "http://localhost:3000",  # React típico
     "http://127.0.0.1:3000",  # React alternativo
-    "http://localhost:5173",  # Vite típico
-
+    
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # WARNING Solo desarrollo
+
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -166,3 +173,5 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
    # 'ngrok-skip-browser-warning',  # ← Para ngrok
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True  # WARNING Solo desarrollo
