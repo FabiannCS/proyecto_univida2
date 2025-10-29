@@ -1,5 +1,8 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Pago, Factura, Siniestro, NotaPoliza, Rol
+
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -135,3 +138,17 @@ class CrearRolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rol
         fields = ['nombre', 'descripcion', 'permisos']
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # --- Añade tus datos personalizados ---
+        token['rol'] = user.rol 
+        token['username'] = user.username
+        # --- Fin ---
+
+        return token
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer

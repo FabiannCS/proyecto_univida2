@@ -1,7 +1,9 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
 
 urlpatterns = [
+
     # APIs para Clientes
     path('clientes/', views.lista_clientes, name='lista_clientes'),
     

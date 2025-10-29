@@ -7,18 +7,23 @@ class Usuario(AbstractUser):
     fecha_registro = models.DateTimeField(auto_now_add=True)
     es_cliente = models.BooleanField(default=False)
     es_agente = models.BooleanField(default=False)
-    rol = models.ForeignKey(  # ← NUEVO CAMPO
-        'Rol', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,
-        related_name='usuarios'
+    ROL_CHOICES = [
+        ('ADMIN', 'Administrador'),
+        ('AGENTE', 'Agente'),
+        ('CLIENTE', 'Cliente'),
+    ]
+    rol = models.CharField(
+        max_length=10, 
+        choices=ROL_CHOICES, 
+        default='CLIENTE' # Por defecto, Cliente
     )
 
-    
     class Meta:
-        db_table = 'univida_usuario'  # Nombre diferente
+        db_table = 'univida_usuario' 
 
+    def __str__(self):
+        return self.username
+    
 class Cliente(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
     fecha_nacimiento = models.DateField()
