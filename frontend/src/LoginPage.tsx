@@ -111,7 +111,7 @@ function LoginPage() {
                     sx={{fontFamily: "'Michroma', sans-seriff",
                     fontWeith: 900, fontSize: '1.8rem', color: '#333333'
                     }}>
-                    Seguros Univida
+                    <center>Seguros Univida</center> 
                 </Typography>
                 
                 <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%'}}>
