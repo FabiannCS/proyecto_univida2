@@ -52,7 +52,7 @@ class AgenteSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='usuario.first_name', read_only=True)
     last_name = serializers.CharField(source='usuario.last_name', read_only=True)
     rol = serializers.CharField(source='usuario.rol', read_only=True) # Mostrar el rol
-    class Meta:
+class Meta:
         model = Agente
         # Incluye campos de Agente y los campos anidados de Usuario
         fields = ['id', 'usuario', 'codigo_agente', 'fecha_contratacion', 
