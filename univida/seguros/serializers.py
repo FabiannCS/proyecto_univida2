@@ -38,24 +38,61 @@ class CrearPolizaSerializer(serializers.ModelSerializer):
         model = Poliza
         fields = ['cliente', 'suma_asegurada', 'prima_anual', 'fecha_inicio', 'fecha_vencimiento']
 
+class AgenteProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Agente
+        # Excluimos 'usuario' porque ya lo tendremos del modelo Usuario
+        exclude = ('usuario',)
 
 #Aireyu
 class AgenteSerializer(serializers.ModelSerializer):
-    usuario_info = UsuarioSerializer(source='usuario', read_only=True)
+    # Para mostrar campos del Usuario relacionado
+    username = serializers.CharField(source='usuario.username', read_only=True)
+    email = serializers.EmailField(source='usuario.email', read_only=True)
+    first_name = serializers.CharField(source='usuario.first_name', read_only=True)
+    last_name = serializers.CharField(source='usuario.last_name', read_only=True)
+    rol = serializers.CharField(source='usuario.rol', read_only=True) # Mostrar el rol
+class Meta:
+        model = Agente
+        # Incluye campos de Agente y los campos anidados de Usuario
+        fields = ['id', 'usuario', 'codigo_agente', 'fecha_contratacion', 
+                  'especialidad', 'comision', 'estado', 
+                  'username', 'email', 'first_name', 'last_name', 'rol']
+        read_only_fields = ['usuario'] # El usuario se asignará en la vista al crear
+    # (Opcional pero recomendado para CREAR/EDITAR)
+    # Necesitaríamos personalizar los métodos create/update para manejar
+    # la creación/actualización del objeto Agente asociado al Usuario.
+    # Por ahora, nos enfocaremos en LISTAR.
+
+class UsuarioAgenteSerializer(serializers.ModelSerializer):
+    # Podrías añadir validación extra aquí si es necesario
+    class Meta:
+        model = Usuario
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'telefono', 'rol']
+        extra_kwargs = {'password': {'write_only': True}} # No mostrar password al leer
+
+def create(self, validated_data):
+        # Asegurarse de que el rol sea AGENTE y hashear la contraseña
+        validated_data['rol'] = 'AGENTE' 
+        user = Usuario.objects.create_user(**validated_data)
+        # Aquí podrías crear el perfil Agente asociado si es necesario
+        # Agente.objects.create(usuario=user, codigo_agente=..., fecha_contratacion=...) 
+        return user
+
+def update(self, instance, validated_data):
+        # Manejar actualización de contraseña si se provee
+        password = validated_data.pop('password', None)
+        if password:
+            instance.set_password(password)
+        # Asegurarse de que el rol siga siendo AGENTE
+        validated_data['rol'] = 'AGENTE'
+        return super().update(instance, validated_data)
     
-    class Meta:
-        model = Agente
-        fields = [
-            'id', 'usuario_info', 'codigo_agente', 'fecha_contratacion',
-            'especialidad', 'comision', 'estado', 'telefono_oficina',
-            'direccion_oficina'
-        ]
 
-class CrearAgenteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Agente
-        fields = ['usuario', 'codigo_agente', 'fecha_contratacion', 'especialidad', 'comision']
-
+#class CrearAgenteSerializer(serializers.ModelSerializer):
+#   class Meta:
+#        model = Agente
+#        fields = ['usuario', 'codigo_agente', 'fecha_contratacion', 'especialidad', 'comision']
 
 
 

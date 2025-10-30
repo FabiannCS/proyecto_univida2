@@ -1,14 +1,16 @@
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza
-from .serializers import (
-    ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, 
-    BeneficiarioSerializer, AgenteSerializer, CrearAgenteSerializer,
-    FacturaSerializer, CrearFacturaSerializer, PagoSerializer, 
-    CrearPagoSerializer
-)
+# en seguros/views.py
 
+from rest_framework import status, permissions # <--- Combinado
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser #para proteger las vistas
+
+# Modelos (todos en una línea)
+from .models import (Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Siniestro, NotaPoliza, Usuario)
+# Serializers (todos en un bloque)
+from .serializers import (ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, BeneficiarioSerializer,
+    FacturaSerializer, CrearFacturaSerializer, PagoSerializer, CrearPagoSerializer, UsuarioAgenteSerializer,SiniestroSerializer, CrearSiniestroSerializer,
+    NotaPolizaSerializer, CrearNotaPolizaSerializer)
 
 # API para Clientes
 @api_view(['GET'])
@@ -52,39 +54,6 @@ def detalle_poliza(request, poliza_id):
             status=status.HTTP_404_NOT_FOUND
         )
     
-from .serializers import AgenteSerializer, CrearAgenteSerializer
-
-# API para Agentes
-@api_view(['GET', 'POST'])
-def lista_agentes(request):
-    if request.method == 'GET':
-        agentes = Agente.objects.all()
-        serializer = AgenteSerializer(agentes, many=True)
-        return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        serializer = CrearAgenteSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# API para agente específico
-@api_view(['GET'])
-def detalle_agente(request, agente_id):
-    try:
-        agente = Agente.objects.get(id=agente_id)
-        serializer = AgenteSerializer(agente)
-        return Response(serializer.data)
-    except Agente.DoesNotExist:
-        return Response(
-            {'error': 'Agente no encontrado'}, 
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-
-from .serializers import FacturaSerializer, CrearFacturaSerializer, PagoSerializer, CrearPagoSerializer
-
 # API para Facturas
 @api_view(['GET', 'POST'])
 def lista_facturas(request):
@@ -173,3 +142,124 @@ def detalle_nota_poliza(request, nota_id):
     except NotaPoliza.DoesNotExist:
         return Response({'error': 'Nota no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
+
+@api_view(['GET']) # Solo permite peticiones GET
+@permission_classes([IsAdminUser]) # Solo administradores pueden ver la lista
+def lista_agentes(request):
+    """
+    Lista todos los usuarios con rol AGENTE.
+    """
+    if request.method == 'GET':
+        # Filtra usuarios por rol='AGENTE'
+        agentes_usuarios = Usuario.objects.filter(rol='AGENTE') 
+        # Usa el serializer para convertir los datos a JSON
+        serializer = UsuarioAgenteSerializer(agentes_usuarios, many=True) 
+        return Response(serializer.data)
+    
+@api_view(['POST']) # Solo permite peticiones POST
+@permission_classes([IsAdminUser]) # Solo administradores pueden crear agentes
+def crear_agente(request):
+    """
+    Crea un nuevo usuario con rol AGENTE.
+    """
+    if request.method == 'POST':
+        # Usa el serializer para validar y crear el Usuario
+        serializer = UsuarioAgenteSerializer(data=request.data)
+        if serializer.is_valid():
+            # Guarda el nuevo usuario (el serializer ya pone rol='AGENTE' y hashea el pass)
+            user = serializer.save() 
+            
+            # --- Opcional: Crear el perfil Agente asociado ---
+            # Necesitarías recibir 'codigo_agente' y 'fecha_contratacion' en request.data
+            try:
+                Agente.objects.create(
+                    usuario=user,
+                    codigo_agente=request.data.get('codigo_agente', f'TEMP-{user.id}'), # Ejemplo
+                    fecha_contratacion=request.data.get('fecha_contratacion', None) # Ejemplo
+                    # Añade otros campos si los necesitas
+                )
+            except Exception as e:
+                # Si falla crear el Agente, podrías borrar el Usuario o manejar el error
+                user.delete() 
+                return Response({'error': f'No se pudo crear el perfil Agente: {e}'}, status=status.HTTP_400_BAD_REQUEST)
+            # --- Fin Opcional ---
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Si los datos no son válidos, devuelve los errores
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET']) # Solo permite GET
+@permission_classes([IsAdminUser])
+def detalle_agente(request, agente_id):
+    """
+    Obtiene los detalles de un usuario agente específico por su ID de Usuario.
+    """
+    try:
+        # Busca el usuario por ID y asegúrate de que sea AGENTE
+        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE') 
+    except Usuario.DoesNotExist:
+        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        # Usa el serializer para convertir los datos a JSON
+        serializer = UsuarioAgenteSerializer(agente_usuario) 
+        # NOTA: Sería ideal usar AgenteSerializer aquí para mostrar más detalles
+        # pero requeriría buscar el objeto Agente asociado al usuario.
+        return Response(serializer.data)
+    
+@api_view(['PUT', 'PATCH']) # Permite actualización completa (PUT) o parcial (PATCH)
+@permission_classes([IsAdminUser])
+def editar_agente(request, agente_id):
+    """Actualiza un usuario agente existente."""
+    try:
+        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
+    except Usuario.DoesNotExist:
+        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Usa el serializer para validar y actualizar el Usuario
+    # partial=True permite actualizaciones parciales con PATCH
+    serializer = UsuarioAgenteSerializer(agente_usuario, data=request.data, partial=True) 
+    if serializer.is_valid():
+        serializer.save() # El serializer ya se asegura de que el rol siga siendo AGENTE
+        
+        # --- Opcional: Actualizar el perfil Agente asociado ---
+        # Podrías buscar el Agente y actualizar sus campos aquí si es necesario
+        # try:
+        #    agente_perfil = Agente.objects.get(usuario=agente_usuario)
+        #    agente_perfil.comision = request.data.get('comision', agente_perfil.comision)
+        #    # ... otros campos ...
+        #    agente_perfil.save()
+        # except Agente.DoesNotExist:
+        #    pass # O manejar el error si el perfil no existe
+        # --- Fin Opcional ---
+        
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['DELETE']) # Solo permite DELETE
+@permission_classes([IsAdminUser])
+def eliminar_agente(request, agente_id):
+    """
+    Elimina (o desactiva) un usuario agente existente.
+    """
+    try:
+        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
+    except Usuario.DoesNotExist:
+        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'DELETE':
+        # Opción 1: Desactivar (Recomendado)
+        agente_usuario.is_active = False
+        agente_usuario.save()
+        # También podrías desactivar el perfil Agente
+        try:
+            agente_perfil = Agente.objects.get(usuario=agente_usuario)
+            agente_perfil.estado = 'inactivo'
+            agente_perfil.save()
+        except Agente.DoesNotExist:
+            pass 
+        return Response({'mensaje': 'Agente desactivado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+
+        # Opción 2: Eliminar (¡CUIDADO! Borra permanentemente)
+        # agente_usuario.delete()
+        # return Response({'mensaje': 'Agente eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)

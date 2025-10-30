@@ -142,7 +142,7 @@ class Beneficiario(models.Model):
 
 
 class Agente(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='agente')
     codigo_agente = models.CharField(max_length=20, unique=True)
     fecha_contratacion = models.DateField()
     especialidad = models.CharField(max_length=100, default='Seguros de Vida')
