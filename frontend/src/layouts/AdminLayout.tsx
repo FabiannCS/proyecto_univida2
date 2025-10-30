@@ -15,15 +15,32 @@ const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 const AdminLayout: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();
+const [collapsed, setCollapsed] = useState(false);
+const navigate = useNavigate();
 
-  const handleLogout = () => {
+const handleLogout = () => {
     // 1. Borra el token del almacenamiento
     localStorage.removeItem('accessToken');
     // 2. Redirige al login
     navigate('/');
-  };
+};
+const menuItems = [
+    {
+        key: '1',
+        icon: React.createElement(DashboardOutlined), // Crea el ícono
+        label: <Link to="/admin-dashboard" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Dashboard</Link>, // El contenido es el Link
+    },
+    {
+        key: '2',
+        icon: React.createElement(SolutionOutlined),
+        label: <Link to="/admin-agentes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Ver Agentes</Link>,
+    },
+    {
+        key: '3',
+        icon: React.createElement(UserOutlined),
+        label: <Link to="/admin-clientes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Ver Clientes</Link>,
+    },
+];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -41,17 +58,20 @@ const AdminLayout: React.FC = () => {
         </Title>
         
         {/* Menú de Navegación */}
-        <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} style={{background: '#212121', borderRight: 0}}>
-          <Menu.Item key="1" icon={<DashboardOutlined />}>
-            <Link to="/admin-dashboard">Dashboard</Link>
-          </Menu.Item>
-          <Menu.Item key="2" icon={<SolutionOutlined />}>
-            <Link to="/admin-agentes">Gestionar Agentes</Link>
-          </Menu.Item>
-          <Menu.Item key="3" icon={<UserOutlined />}>
-            <Link to="/admin-clientes">Ver Clientes</Link>
-          </Menu.Item>
-        </Menu>
+        <Menu 
+            theme="dark" 
+            mode="inline" 
+            defaultSelectedKeys={['1']}
+            items={menuItems} // <-- USA LA PROP 'items' AQUÍ
+            className='custom-menu'
+        />
+        <style>
+        {`
+            .custom-menu.ant-menu-dark {
+                background: #212121;
+            }
+        `}
+</style>
       </Sider>
       
       {/* 2. ÁREA PRINCIPAL (Layout) */}

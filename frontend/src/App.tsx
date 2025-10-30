@@ -5,8 +5,10 @@ import LoginPage from './LoginPage'; // Importa tu página
 
 import AdminLayout from './layouts/AdminLayout'; // <-- AÑADE ESTA LÍNEA
 import AdminDashboardPage from './pages/AdminDashboardPage';
-import AgenteDashboardPage from './pages/AgenteDashboardPage';
+//import AgenteDashboardPage from './pages/AgenteDashboardPage';
 import MiPolizaPage from './pages/MiPolizaPage';
+import AdminGestionAgentesPage from './pages/gestion/AdminGestionAgentesPage';
+import AdminCrearAgentePage from './pages/gestion/AdminCrearAgentePage';
 
 import ProtectedRoute from './ProtectedRoute';
 
@@ -27,7 +29,8 @@ function App() {
 
             {/* Y dentro del <Outlet/> de AdminLayout, carga estas páginas: */}
             <Route path="admin-dashboard" element={<AdminDashboardPage />} />
-            <Route path="admin-agentes" element={<AgenteDashboardPage />} /> 
+            <Route path="admin-agentes" element={<AdminGestionAgentesPage/>} /> 
+            <Route path="admin-agentes/crear" element={<AdminCrearAgentePage />} />
             <Route path="admin-clientes" element={<MiPolizaPage />} /> 
             {/* (Cambiamos MiPolizaPage por AdminClientesPage luego, por ahora está bien) */}
 
