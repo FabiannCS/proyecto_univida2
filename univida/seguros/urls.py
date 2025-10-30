@@ -6,7 +6,10 @@ urlpatterns = [
 
     # APIs para Clientes (Las que ya tenías)
     path('clientes/', views.lista_clientes, name='lista_clientes'),
-    # ... (otras rutas de clientes si las tienes) ...
+    path('clientes/crear/', views.crear_cliente, name='crear_cliente'),  # NUEVA
+    path('clientes/<int:cliente_id>/', views.detalle_cliente, name='detalle_cliente'),  # NUEVA
+    path('clientes/<int:cliente_id>/editar/', views.editar_cliente, name='editar_cliente'),  # NUEVA
+    path('clientes/<int:cliente_id>/eliminar/', views.eliminar_cliente, name='eliminar_cliente'),  # NUEVA
     
     # APIs para Pólizas (Las que ya tenías)
     path('polizas/', views.lista_polizas, name='lista_polizas'),

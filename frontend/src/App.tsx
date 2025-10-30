@@ -9,6 +9,8 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import MiPolizaPage from './pages/MiPolizaPage';
 import AdminGestionAgentesPage from './pages/gestion/AdminGestionAgentesPage';
 import AdminCrearAgentePage from './pages/gestion/AdminCrearAgentePage';
+import AdminGestionClientesPage from './pages/gestion/AdminGestionClientesPage';
+import AdminCrearClientePage from './pages/gestion/AdminCrearClientePage';
 
 import ProtectedRoute from './ProtectedRoute';
 
@@ -31,7 +33,8 @@ function App() {
             <Route path="admin-dashboard" element={<AdminDashboardPage />} />
             <Route path="admin-agentes" element={<AdminGestionAgentesPage/>} /> 
             <Route path="admin-agentes/crear" element={<AdminCrearAgentePage />} />
-            <Route path="admin-clientes" element={<MiPolizaPage />} /> 
+            <Route path="admin-clientes" element={<AdminGestionClientesPage />} />
+            <Route path="admin-clientes/crear" element={<AdminCrearClientePage />} />
             {/* (Cambiamos MiPolizaPage por AdminClientesPage luego, por ahora está bien) */}
 
           </Route>
