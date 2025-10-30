@@ -10,7 +10,6 @@ from .models import (Cliente, Poliza, Beneficiario, Agente, Factura, Pago, Sinie
 # Serializers (todos en un bloque)
 from .serializers import (ClienteSerializer, PolizaSerializer, CrearPolizaSerializer, BeneficiarioSerializer,
     FacturaSerializer, CrearFacturaSerializer, PagoSerializer, CrearPagoSerializer, UsuarioAgenteSerializer,SiniestroSerializer, CrearSiniestroSerializer,
-    NotaPolizaSerializer, CrearNotaPolizaSerializer, AgenteSerializer,CrearClienteSerializer)
 
 # API para Clientes
 @api_view(['GET'])
@@ -151,9 +150,7 @@ def lista_agentes(request):
     """
     if request.method == 'GET':
         # Filtra usuarios por rol='AGENTE'
-        agentes = Agente.objects.all() 
         # Usa el serializer para convertir los datos a JSON
-        serializer = AgenteSerializer(agentes, many=True) 
         return Response(serializer.data)
     
 @api_view(['POST']) # Solo permite peticiones POST
