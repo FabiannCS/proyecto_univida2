@@ -1,6 +1,7 @@
 // en frontend/src/pages/gestion/AdminCrearAgentePage.tsx
 import React, { useState } from 'react';
 import { Layout, Typography, Form, Input, Button, message, Row, Col } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // Para redirigir
 
@@ -52,8 +53,17 @@ const AdminCrearAgentePage: React.FC = () => {
 
     return (
         <Layout>
-            <Content>
-                <Title level={2} style={{ textAlign: 'center', marginBottom: '24px', fontFamily: 'Michroma, sans-serif', paddingTop: '20px'}}>
+            <Content style={{padding: '15px'}}>
+                {/* --- AÑADE ESTE BOTÓN AQUÍ --- */}
+            <Button
+                type="default" // O "ghost" para que sea más sutil
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate(-1)} // <-- ¡LA MAGIA! -1 significa "ir atrás"
+                style={{ marginBottom: '10px', fontFamily: 'Michroma, sans-serif'}}
+            >
+                Volver
+            </Button>
+                <Title level={2} style={{ textAlign: 'center', marginBottom: '20px', fontFamily: 'Michroma, sans-serif'}}>
                         Crear Nuevo Agente
                 </Title>
 
@@ -140,7 +150,13 @@ const AdminCrearAgentePage: React.FC = () => {
                         
                         {/* Columna Derecha (vacía por ahora, o puedes poner otro campo) */}
                         <Col span={12}>
-                            {/* Puedes poner aquí 'telefono' si lo mueves de tu UsuarioSerializer */}
+                            <Item
+                                name="identificacion"
+                                label="Nº de Carnet (CI)"
+                                rules={[{ required: true, message: 'Este campo es obligatorio' }]}
+                            >   
+                                <Input />
+                            </Item>
                         </Col>
                     </Row>
 

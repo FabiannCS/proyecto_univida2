@@ -117,7 +117,7 @@ const AdminGestionClientesPage: React.FC = () => {
 
   return (
     <Layout>
-      <Content>
+      <Content style={{padding: '24px'}}>
         <Title level={2} style={{fontFamily: 'Michroma, sans-serif', fontSize: '1.7rem'}}>
           Gestión de Clientes
         </Title>

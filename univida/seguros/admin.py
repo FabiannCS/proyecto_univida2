@@ -5,11 +5,11 @@ from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Factura, Pag
 # Configuración personalizada para Usuario
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'es_cliente', 'es_agente', 'is_staff', 'rol')
-    list_filter = ('es_cliente', 'es_agente', 'is_staff', 'is_superuser', 'rol')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'rol')
+    list_filter = ('is_staff', 'is_superuser', 'rol')
     fieldsets = UserAdmin.fieldsets + (
         ('Información UNIVIDA', {
-            'fields': ('telefono', 'es_cliente', 'es_agente', 'rol')
+            'fields': ('telefono', 'rol')
         }),
     )
 

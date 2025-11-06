@@ -23,16 +23,12 @@ urlpatterns = [
     # --- APIs COMPLETAS para Agentes ---
     # GET: Obtener la lista de todos los agentes
     path('agentes/', views.lista_agentes, name='lista_agentes'), 
-    
     # POST: Crear un nuevo agente
     path('agentes/crear/', views.crear_agente, name='crear_agente'), # <-- NUEVA RUTA PARA CREAR
-
     # GET: Obtener detalles de UN agente específico por ID
-    path('agentes/<int:agente_id>/', views.detalle_agente, name='detalle_agente'), 
-    
+    path('agentes/<int:agente_id>/', views.detalle_agente, name='detalle_agente'),
     # PUT/PATCH: Actualizar un agente específico por ID
-    path('agentes/<int:agente_id>/editar/', views.editar_agente, name='editar_agente'), # <-- NUEVA RUTA PARA EDITAR
-
+    path('agentes/<int:agente_id>/editar/', views.editar_agente, name='editar_agente'),
     # DELETE: Eliminar un agente específico por ID
     path('agentes/<int:agente_id>/eliminar/', views.eliminar_agente, name='eliminar_agente'), # <-- NUEVA RUTA PARA ELIMINAR
     # --- FIN APIs Agentes ---

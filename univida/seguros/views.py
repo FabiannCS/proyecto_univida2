@@ -167,7 +167,7 @@ def crear_agente(request):
         serializer = UsuarioAgenteSerializer(data=request.data)
         if serializer.is_valid():
             # Guarda el nuevo usuario (el serializer ya pone rol='AGENTE' y hashea el pass)
-            user = serializer.save() 
+            user = serializer.save(rol='AGENTE') 
             
             # --- Opcional: Crear el perfil Agente asociado ---
             # Necesitarías recibir 'codigo_agente' y 'fecha_contratacion' en request.data

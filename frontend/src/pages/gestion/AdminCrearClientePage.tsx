@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Layout, Typography, Form, Input, Button, message, Row, Col, DatePicker } from 'antd';
 import axios from 'axios';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import dayjs from 'dayjs';
+//import dayjs from 'dayjs';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -51,8 +52,16 @@ const AdminCrearClientePage: React.FC = () => {
 
     return (
         <Layout>
-            <Content>
-                <Title level={2} style={{ textAlign: 'center', marginBottom: '24px', fontFamily: 'Michroma, sans-serif', paddingTop: '20px'}}>
+            <Content style={{padding: '15px'}}>
+            <Button
+                type="default" // O "ghost" para que sea más sutil
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate(-1)} // <-- ¡LA MAGIA! -1 significa "ir atrás"
+                style={{ marginBottom: '10px', fontFamily: 'Michroma, sans-serif'}}
+            >
+                Volver
+            </Button>
+                <Title level={2} style={{ textAlign: 'center', marginBottom: '24px', fontFamily: 'Michroma, sans-serif'}}>
                     Crear Nuevo Cliente
                 </Title>
 

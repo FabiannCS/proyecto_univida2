@@ -7,7 +7,9 @@ import {
   DashboardOutlined,
   UserOutlined,
   SolutionOutlined,
+  FileTextOutlined,
   LogoutOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 
@@ -28,24 +30,34 @@ const menuItems = [
     {
         key: '1',
         icon: React.createElement(DashboardOutlined), // Crea el ícono
-        label: <Link to="/admin-dashboard" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Dashboard</Link>, // El contenido es el Link
+        label: <Link to="/admin-dashboard" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Reportes</Link>, // El contenido es el Link
     },
     {
         key: '2',
         icon: React.createElement(SolutionOutlined),
-        label: <Link to="/admin-agentes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Ver Agentes</Link>,
+        label: <Link to="/admin-agentes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Agentes</Link>,
     },
     {
         key: '3',
         icon: React.createElement(UserOutlined),
-        label: <Link to="/admin-clientes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Ver Clientes</Link>,
+        label: <Link to="/admin-clientes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Clientes</Link>,
+    },
+    {
+        key: '4',
+        icon: React.createElement(FileTextOutlined),
+        label: <Link to="/admin-polizas" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Pólizas</Link>,
+    },
+    {
+        key: '5',
+        icon: React.createElement(ExclamationCircleOutlined),
+        label: <Link to="/admin-siniestros" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Siniestros</Link>,
     },
 ];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* 1. BARRA LATERAL (SIDER) */}
-      <Sider trigger={null} collapsible collapsed={collapsed} style={{background: '#212121'}}>
+      <Sider trigger={null} collapsible collapsed={collapsed} width={240} style={{background: '#212121'}}>
         <Title level={4} style={{ fontWeight: 'bold', 
                                     margin: '16px 0',  
                                     color: 'white', 
@@ -71,7 +83,7 @@ const menuItems = [
                 background: #212121;
             }
         `}
-</style>
+        </style>
       </Sider>
       
       {/* 2. ÁREA PRINCIPAL (Layout) */}
