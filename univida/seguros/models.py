@@ -4,9 +4,8 @@ from django.contrib.auth.models import AbstractUser
 # Modelo de Usuario personalizado (evita conflicto con auth.User)
 class Usuario(AbstractUser):
     telefono = models.CharField(max_length=20, blank=True, null=True)
+    identificacion = models.CharField(max_length=20, unique=True, blank=True, null=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
-    es_cliente = models.BooleanField(default=False)
-    es_agente = models.BooleanField(default=False)
     ROL_CHOICES = [
         ('ADMIN', 'Administrador'),
         ('AGENTE', 'Agente'),

@@ -68,10 +68,10 @@ class UsuarioAgenteSerializer(serializers.ModelSerializer):
     # Podrías añadir validación extra aquí si es necesario
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'telefono', 'rol']
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'telefono', 'rol', 'identificacion']
         extra_kwargs = {'password': {'write_only': True}} # No mostrar password al leer
 
-def create(self, validated_data):
+    def create(self, validated_data):
         # Asegurarse de que el rol sea AGENTE y hashear la contraseña
         validated_data['rol'] = 'AGENTE' 
         user = Usuario.objects.create_user(**validated_data)
@@ -79,7 +79,7 @@ def create(self, validated_data):
         # Agente.objects.create(usuario=user, codigo_agente=..., fecha_contratacion=...) 
         return user
 
-def update(self, instance, validated_data):
+    def update(self, instance, validated_data):
         # Manejar actualización de contraseña si se provee
         password = validated_data.pop('password', None)
         if password:
@@ -87,12 +87,6 @@ def update(self, instance, validated_data):
         # Asegurarse de que el rol siga siendo AGENTE
         validated_data['rol'] = 'AGENTE'
         return super().update(instance, validated_data)
-    
-
-#class CrearAgenteSerializer(serializers.ModelSerializer):
-#   class Meta:
-#        model = Agente
-#        fields = ['usuario', 'codigo_agente', 'fecha_contratacion', 'especialidad', 'comision']
 
 
 
