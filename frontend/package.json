@@ -21,6 +21,7 @@
     "@types/react-dom": "^19.2.2",
     "antd": "^5.27.6",
     "axios": "^1.13.0",
+    "dayjs": "^1.11.19",
     "jwt-decode": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -52,6 +53,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {}
+  }
 }

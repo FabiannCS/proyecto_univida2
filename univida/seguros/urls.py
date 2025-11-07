@@ -6,8 +6,11 @@ urlpatterns = [
 
     # APIs para Clientes (Las que ya tenías)
     path('clientes/', views.lista_clientes, name='lista_clientes'),
-    # ... (otras rutas de clientes si las tienes) ...
-    
+    path('clientes/crear/', views.crear_cliente, name='crear_cliente'),
+    path('clientes/<int:cliente_id>/', views.detalle_cliente, name='detalle_cliente'),
+    path('clientes/<int:cliente_id>/editar/', views.editar_cliente, name='editar_cliente'),
+    path('clientes/<int:cliente_id>/eliminar/', views.eliminar_cliente, name='eliminar_cliente'),
+    path('clientes/<int:cliente_id>/reactivar/', views.reactivar_cliente, name='reactivar_cliente'),
     # APIs para Pólizas (Las que ya tenías)
     path('polizas/', views.lista_polizas, name='lista_polizas'),
     path('polizas/<int:poliza_id>/', views.detalle_poliza, name='detalle_poliza'),
@@ -28,6 +31,7 @@ urlpatterns = [
     path('agentes/<int:agente_id>/editar/', views.editar_agente, name='editar_agente'),
     # DELETE: Eliminar un agente específico por ID
     path('agentes/<int:agente_id>/eliminar/', views.eliminar_agente, name='eliminar_agente'), # <-- NUEVA RUTA PARA ELIMINAR
+    path('agentes/<int:agente_id>/reactivar/', views.reactivar_agente, name='reactivar_agente'),
     # --- FIN APIs Agentes ---
 
     # ... (Tus otras rutas: facturas, pagos, siniestros, notas...) ...

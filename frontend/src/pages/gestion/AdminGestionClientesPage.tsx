@@ -1,14 +1,13 @@
-// en frontend/src/pages/gestion/AdminGestionClientesPage.tsx
+// EN frontend/src/pages/gestion/AdminGestionClientesPage.tsx - VERSIÓN FINAL
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Table, Button, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Layout, Typography, Table, Button, message, Tabs, Tag, Space, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const { Content } = Layout;
 const { Title } = Typography;
 
-// Interfaz basada en tu ClienteSerializer
 interface Cliente {
   id: number;
   usuario_info: {
@@ -18,6 +17,7 @@ interface Cliente {
     first_name: string;
     last_name: string;
     telefono: string;
+    is_active: boolean;
   };
   fecha_nacimiento: string;
   direccion: string;
@@ -27,23 +27,33 @@ interface Cliente {
 
 const AdminGestionClientesPage: React.FC = () => {
   const navigate = useNavigate();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientesActivos, setClientesActivos] = useState<Cliente[]>([]);
+  const [clientesInactivos, setClientesInactivos] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('activos');
 
-  // Función para cargar los clientes
+  const getToken = () => localStorage.getItem('accessToken');
+
+  // Función para cargar todos los clientes
   const fetchClientes = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = getToken();
       if (!token) {
-        message.error('No estás autenticado. Por favor, inicia sesión de nuevo.');
+        message.error('No estás autenticado.');
         setLoading(false);
         return;
       }
 
       const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.get('http://127.0.0.1:8000/api/clientes/', { headers });
-      setClientes(response.data);
+      
+      // Separar clientes activos e inactivos
+      const activos = response.data.filter((cliente: Cliente) => cliente.usuario_info.is_active !== false);
+      const inactivos = response.data.filter((cliente: Cliente) => cliente.usuario_info.is_active === false);
+      
+      setClientesActivos(activos);
+      setClientesInactivos(inactivos);
 
     } catch (error: any) {
       console.error('Error al cargar clientes:', error);
@@ -57,13 +67,64 @@ const AdminGestionClientesPage: React.FC = () => {
     }
   };
 
-  // Cargar clientes al montar el componente
+  // Función para desactivar cliente
+  const handleDesactivarCliente = async (clienteId: number, clienteNombre: string) => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        message.error('No estás autenticado.');
+        setLoading(false);
+        return;
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(`http://127.0.0.1:8000/api/clientes/${clienteId}/eliminar/`, { headers });
+      
+      message.success(`Cliente ${clienteNombre} desactivado correctamente.`);
+      fetchClientes(); // Recargar la lista
+    } catch (error: any) {
+      console.error('Error al desactivar cliente:', error);
+      message.error('Error al desactivar el cliente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para reactivar cliente
+  const handleReactivarCliente = async (clienteId: number, clienteNombre: string) => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        message.error('No estás autenticado.');
+        setLoading(false);
+        return;
+      }
+
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.patch(`http://127.0.0.1:8000/api/clientes/${clienteId}/reactivar/`, {}, { headers });
+      
+      message.success(`Cliente ${clienteNombre} reactivado correctamente.`);
+      fetchClientes(); // Recargar la lista
+    } catch (error: any) {
+      console.error('Error al reactivar cliente:', error);
+      message.error('Error al reactivar el cliente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditarCliente = (cliente: Cliente) => {
+    navigate(`/admin-clientes/editar/${cliente.id}`);
+  };
+
   useEffect(() => {
     fetchClientes();
   }, []);
 
-  // Columnas para la tabla
-  const columns = [
+  // Columnas para la tabla de clientes ACTIVOS
+  const columnasActivos = [
     {
       title: 'Identificación',
       dataIndex: 'identificacion',
@@ -92,25 +153,104 @@ const AdminGestionClientesPage: React.FC = () => {
       key: 'estado_salud',
     },
     {
+      title: 'Estado',
+      key: 'estado',
+      render: (_: any, record: Cliente) => (
+        <Tag color="green" icon={<CheckCircleOutlined />}>
+          Activo
+        </Tag>
+      ),
+    },
+    {
       title: 'Acciones',
       key: 'acciones',
       render: (_: any, record: Cliente) => (
-        <span>
+        <Space size="middle">
           <Button 
             icon={<EditOutlined />} 
-            onClick={() => alert('Editar Cliente ID: ' + record.id)} 
-            style={{ marginRight: 8 }}
+            onClick={() => handleEditarCliente(record)} 
           >
             Editar
           </Button>
-          <Button 
-            icon={<DeleteOutlined />} 
-            danger 
-            onClick={() => alert('Eliminar Cliente ID: ' + record.id)}
+          <Popconfirm
+            title="¿Estás seguro de desactivar este cliente?"
+            description={`El cliente ${record.usuario_info.first_name} ${record.usuario_info.last_name} será desactivado pero conservará su historial.`}
+            onConfirm={() => handleDesactivarCliente(record.id, `${record.usuario_info.first_name} ${record.usuario_info.last_name}`)}
+            okText="Sí, desactivar"
+            cancelText="Cancelar"
+            okType="danger"
           >
-            Eliminar
-          </Button>
-        </span>
+            <Button 
+              icon={<DeleteOutlined />} 
+              danger
+            >
+              Desactivar
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  // Columnas para la tabla de clientes INACTIVOS
+  const columnasInactivos = [
+    {
+      title: 'Identificación',
+      dataIndex: 'identificacion',
+      key: 'identificacion',
+    },
+    {
+      title: 'Nombre',
+      key: 'nombre',
+      render: (_: any, record: Cliente) => (
+        `${record.usuario_info.first_name} ${record.usuario_info.last_name}`
+      ),
+    },
+    {
+      title: 'Email',
+      key: 'email',
+      render: (_: any, record: Cliente) => record.usuario_info.email,
+    },
+    {
+      title: 'Teléfono',
+      key: 'telefono',
+      render: (_: any, record: Cliente) => record.usuario_info.telefono || 'N/A',
+    },
+    {
+      title: 'Estado Salud',
+      dataIndex: 'estado_salud',
+      key: 'estado_salud',
+    },
+    {
+      title: 'Estado',
+      key: 'estado',
+      render: (_: any, record: Cliente) => (
+        <Tag color="red" icon={<StopOutlined />}>
+          Inactivo
+        </Tag>
+      ),
+    },
+    {
+      title: 'Acciones',
+      key: 'acciones',
+      render: (_: any, record: Cliente) => (
+        <Space size="middle">
+          <Popconfirm
+            title="¿Estás seguro de reactivar este cliente?"
+            description={`El cliente ${record.usuario_info.first_name} ${record.usuario_info.last_name} será reactivado y podrá acceder al sistema nuevamente.`}
+            onConfirm={() => handleReactivarCliente(record.id, `${record.usuario_info.first_name} ${record.usuario_info.last_name}`)}
+            okText="Sí, reactivar"
+            cancelText="Cancelar"
+            okType="primary"
+          >
+            <Button 
+              icon={<CheckCircleOutlined />} 
+              type="primary"
+            >
+              Reactivar
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -131,12 +271,45 @@ const AdminGestionClientesPage: React.FC = () => {
           Crear Nuevo Cliente
         </Button>
         
-        {/* Tabla que muestra los clientes */}
-        <Table
-          columns={columns}
-          dataSource={clientes}
-          loading={loading}
-          rowKey="id"
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab}
+          items={[
+            {
+              key: 'activos',
+              label: (
+                <span>
+                  <CheckCircleOutlined />
+                  Clientes Activos ({clientesActivos.length})
+                </span>
+              ),
+              children: (
+                <Table
+                  columns={columnasActivos}
+                  dataSource={clientesActivos}
+                  loading={loading}
+                  rowKey="id"
+                />
+              ),
+            },
+            {
+              key: 'inactivos',
+              label: (
+                <span>
+                  <StopOutlined />
+                  Clientes Inactivos ({clientesInactivos.length})
+                </span>
+              ),
+              children: (
+                <Table
+                  columns={columnasInactivos}
+                  dataSource={clientesInactivos}
+                  loading={loading}
+                  rowKey="id"
+                />
+              ),
+            },
+          ]}
         />
       </Content>
     </Layout>

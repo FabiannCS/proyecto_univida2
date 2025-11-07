@@ -263,3 +263,111 @@ def eliminar_agente(request, agente_id):
         # Opción 2: Eliminar (¡CUIDADO! Borra permanentemente)
         # agente_usuario.delete()
         # return Response({'mensaje': 'Agente eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+
+
+# En seguros/views.py - AÑADE ESTAS VISTAS:
+
+from .serializers import CrearClienteSerializer, EditarClienteSerializer  # Añade al import
+
+# API para crear cliente
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def crear_cliente(request):
+    """Crea un nuevo cliente con su usuario asociado."""
+    if request.method == 'POST':
+        serializer = CrearClienteSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API para detalles de cliente
+@api_view(['GET'])
+def detalle_cliente(request, cliente_id):
+    """Obtiene los detalles de un cliente específico."""
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+        serializer = ClienteSerializer(cliente)
+        return Response(serializer.data)
+    except Cliente.DoesNotExist:
+        return Response({'error': 'Cliente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+# API para editar cliente
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAdminUser])
+def editar_cliente(request, cliente_id):
+    """Edita un cliente existente."""
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return Response({'error': 'Cliente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = EditarClienteSerializer(cliente, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API para eliminar cliente
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def eliminar_cliente(request, cliente_id):
+    """Elimina (desactiva) un cliente."""
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return Response({'error': 'Cliente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Desactivar el usuario en lugar de eliminar
+    cliente.usuario.is_active = False
+    cliente.usuario.save()
+    
+    return Response({'mensaje': 'Cliente desactivado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+
+# En seguros/views.py - AÑADE ESTA VISTA PARA REACTIVAR AGENTES:
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def reactivar_agente(request, agente_id):
+    """
+    Reactiva un agente previamente desactivado.
+    """
+    try:
+        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
+    except Usuario.DoesNotExist:
+        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'PATCH':
+        # Reactivar el usuario
+        agente_usuario.is_active = True
+        agente_usuario.save()
+        
+        # También reactivar el perfil Agente si existe
+        try:
+            agente_perfil = Agente.objects.get(usuario=agente_usuario)
+            agente_perfil.estado = 'activo'
+            agente_perfil.save()
+        except Agente.DoesNotExist:
+            pass 
+        
+        return Response({'mensaje': 'Agente reactivado correctamente'}, status=status.HTTP_200_OK)
+    
+# En seguros/views.py - AÑADE ESTAS VISTAS PARA CLIENTES:
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def reactivar_cliente(request, cliente_id):
+    """
+    Reactiva un cliente previamente desactivado.
+    """
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return Response({'error': 'Cliente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'PATCH':
+        # Reactivar el usuario del cliente
+        cliente.usuario.is_active = True
+        cliente.usuario.save()
+        
+        return Response({'mensaje': 'Cliente reactivado correctamente'}, status=status.HTTP_200_OK)

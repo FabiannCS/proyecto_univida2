@@ -7,7 +7,7 @@ from .models import Usuario, Cliente, Poliza, Beneficiario, Agente, Pago, Factur
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'telefono']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'telefono', 'is_active', 'rol']
 
 class ClienteSerializer(serializers.ModelSerializer):
     usuario_info = UsuarioSerializer(source='usuario', read_only=True)
@@ -68,7 +68,7 @@ class UsuarioAgenteSerializer(serializers.ModelSerializer):
     # Podrías añadir validación extra aquí si es necesario
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'telefono', 'rol', 'identificacion']
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'telefono', 'rol', 'identificacion', "is_active"]
         extra_kwargs = {'password': {'write_only': True}} # No mostrar password al leer
 
     def create(self, validated_data):
@@ -173,3 +173,71 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+
+    # En seguros/serializers.py - AÑADE ESTOS SERIALIZERS:
+
+class CrearClienteSerializer(serializers.ModelSerializer):
+    # Campos para crear el Usuario primero
+    username = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    telefono = serializers.CharField(required=False, allow_blank=True, max_length=20)
+
+    class Meta:
+        model = Cliente
+        fields = [
+            'username', 'password', 'first_name', 'last_name', 'email', 'telefono',
+            'fecha_nacimiento', 'direccion', 'identificacion', 'estado_salud'
+        ]
+
+    def create(self, validated_data):
+        # Extraer datos del usuario
+        usuario_data = {
+            'username': validated_data.pop('username'),
+            'password': validated_data.pop('password'),
+            'first_name': validated_data.pop('first_name', ''),
+            'last_name': validated_data.pop('last_name', ''),
+            'email': validated_data.pop('email', ''),
+            'telefono': validated_data.pop('telefono', ''),
+            'rol': 'CLIENTE',
+            'es_cliente': True
+        }
+        
+        # Crear el usuario
+        user = Usuario.objects.create_user(**usuario_data)
+        
+        # Crear el cliente asociado
+        cliente = Cliente.objects.create(usuario=user, **validated_data)
+        
+        return cliente
+
+class EditarClienteSerializer(serializers.ModelSerializer):
+    # Campos para editar el Usuario
+    first_name = serializers.CharField(source='usuario.first_name', required=False)
+    last_name = serializers.CharField(source='usuario.last_name', required=False)
+    email = serializers.EmailField(source='usuario.email', required=False)
+    telefono = serializers.CharField(source='usuario.telefono', required=False, max_length=20)
+
+    class Meta:
+        model = Cliente
+        fields = [
+            'first_name', 'last_name', 'email', 'telefono',
+            'fecha_nacimiento', 'direccion', 'identificacion', 'estado_salud'
+        ]
+
+    def update(self, instance, validated_data):
+        # Extraer datos del usuario si existen
+        usuario_data = validated_data.pop('usuario', {})
+        
+        # Actualizar datos del usuario
+        if usuario_data:
+            usuario = instance.usuario
+            for attr, value in usuario_data.items():
+                setattr(usuario, attr, value)
+            usuario.save()
+        
+        # Actualizar datos del cliente
+        return super().update(instance, validated_data)
