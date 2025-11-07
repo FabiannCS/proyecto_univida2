@@ -6,7 +6,6 @@ import LoginPage from './LoginPage'; // Importa tu página
 import AdminLayout from './layouts/AdminLayout'; // <-- AÑADE ESTA LÍNEA
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AgenteDashboardPage from './pages/AgenteDashboardPage';
-import MiPolizaPage from './pages/MiPolizaPage';
 import AdminGestionAgentesPage from './pages/gestion/AdminGestionAgentesPage';
 import AdminCrearAgentePage from './pages/gestion/AdminCrearAgentePage';
 import AdminEditarAgentePage from './pages/gestion/AdminEditarAgentePage';
@@ -46,7 +45,6 @@ function App() {
             {/* RUTAS PARA LOS CLIENTES*/}
             <Route path="admin-clientes" element={<AdminGestionClientesPage />} />
             <Route path="admin-clientes/crear" element={<AdminCrearClientePage />} />
-            <Route path="admin-clientes" element={<MiPolizaPage />} />
 
             {/* --- AÑADE ESTAS RUTAS PARA PÓLIZAS --- */}
             <Route path="admin-polizas" element={<AdminListarPolizasPage />} />
