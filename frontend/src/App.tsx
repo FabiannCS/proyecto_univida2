@@ -9,7 +9,6 @@ import AgenteDashboardPage from './pages/AgenteDashboardPage';
 import MiPolizaPage from './pages/MiPolizaPage';
 import AdminGestionAgentesPage from './pages/gestion/AdminGestionAgentesPage';
 import AdminCrearAgentePage from './pages/gestion/AdminCrearAgentePage';
-<<<<<<< HEAD
 import AdminEditarAgentePage from './pages/gestion/AdminEditarAgentePage';
 import AdminGestionClientesPage from './pages/gestion/AdminGestionClientesPage';
 import AdminCrearClientePage from './pages/gestion/AdminCrearClientePage';
@@ -18,8 +17,6 @@ import AdminCrearPolizaPage from './pages/polizas/AdminCrearPolizaPage';
 import AdminDetallePolizaPage from './pages/polizas/AdminDetallePolizaPage';
 import AdminListarSiniestrosPage from './pages/siniestros/AdminListarSiniestrosPage';
 import AdminDetalleSiniestroPage from './pages/siniestros/AdminDetalleSiniestroPage';
-=======
->>>>>>> main
 
 import ProtectedRoute from './ProtectedRoute';
 
@@ -44,7 +41,6 @@ function App() {
             {/* RUTAS PARA LOS AGENTES*/}
             <Route path="admin-agentes" element={<AdminGestionAgentesPage/>} /> 
             <Route path="admin-agentes/crear" element={<AdminCrearAgentePage />} />
-<<<<<<< HEAD
             <Route path="admin-agentes/:id/editar" element={<AdminEditarAgentePage />} />
 
             {/* RUTAS PARA LOS CLIENTES*/}
@@ -62,10 +58,8 @@ function App() {
             {/* (Dejamos listas las rutas para los siguientes pasos) */}
             {/* <Route path="admin-siniestros/reportar" element={<AdminReportarSiniestroPage />} /> */}
             <Route path="admin-siniestros/:id" element={<AdminDetalleSiniestroPage />} />
-=======
             <Route path="admin-clientes" element={<MiPolizaPage />} /> 
             {/* (Cambiamos MiPolizaPage por AdminClientesPage luego, por ahora está bien) */}
->>>>>>> main
 
           </Route>
         </Route>
