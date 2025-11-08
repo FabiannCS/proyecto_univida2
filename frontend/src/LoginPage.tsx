@@ -1,30 +1,36 @@
 // en frontend/src/LoginPage.tsx
 import React, { useState } from 'react';
 import axios from 'axios';
-// Importa componentes de Material-UI
-import { TextField, Button, Container, Typography, Box, Avatar, CssBaseline } from '@mui/material';
-// Importa el ícono de escudo
-import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+// Importa componentes de Ant Design
+import { Form, Input, Button, Typography, Layout, Alert, Flex, Avatar } from 'antd'; // Importamos Avatar y Flex
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 // Importa las herramientas para decodificar el token y navegar
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import { authService } from './services/authService';
 
+const { Content } = Layout;
+const { Title, Link } = Typography;
+
+// Define el tipo para los valores del formulario
+type LoginFormValues = {
+    username: string;
+    password?: string;
+};
+
 function LoginPage() {
     const navigate = useNavigate(); // Hook para redirigir
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false); // Estado para mostrar "Cargando..."
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    // La función que se ejecuta cuando el formulario de Ant Design se envía con éxito
+    const onFinish = (values: LoginFormValues) => {
         setError('');
         setLoading(true);
 
         axios.post('http://127.0.0.1:8000/api/token/', {
-            username: username,
-            password: password
+            username: values.username,
+            password: values.password
         })
         .then(response => {
             setLoading(false);
@@ -67,87 +73,100 @@ function LoginPage() {
     };
 
     return (
-        // Contenedor principal con el fondo degradado
-        <Container
-            component="main"
-            maxWidth={false} // Ocupa todo el ancho
-            disableGutters    // Sin márgenes internos
-            sx={{
-                minHeight: '100vh', // Ocupa toda la altura
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                // ¡AQUÍ ESTÁ EL DEGRADADO! (Gris oscuro a negro)
-                background: 'linear-gradient(to bottom, #333333, #000000)',
-            }}
-        >
-            <CssBaseline /> {/* Ayuda a normalizar estilos y aplicar el fondo */}
-
-            {/* La tarjeta blanca del formulario */}
-            <Box
-                sx={{
+        // Contenedor principal (fondo degradado)
+        <Layout style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'linear-gradient(to bottom, #333333, #000000)' }}>
+            <Content>
+                <Typography.Title level={2} style={{ textAlign: 'center', color: 'white', marginBottom: '24px', fontFamily: 'Michroma, sans-serif' }}>
+                    Bienvenido!
+                </Typography.Title>
+                
+                {/* --- Formulario de Login Centrado --- */}
+                <div style={{
+                    padding: '40px',
+                    borderRadius: '8px',
+                    background: '#fff',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    width: '100%',
+                    maxWidth: '420px', // Ancho del formulario
+                    margin: '0 auto',
+                    minHeight: '400px', // Altura que te gustó
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: 4,
-                    borderRadius: 3,
-                    boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.3)',
-                    background: '#ffffff', // Fondo blanco para la tarjeta
-                    color: '#000000', // Texto negro dentro de la tarjeta
-                    width: '100%',
-                    maxWidth: '420px',
-                }}
-            >
-                {/* El ícono de escudo */}
-                <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-                    <ShieldOutlinedIcon />
-                </Avatar>
+                    justifyContent: 'center'
+                }}>
 
-                <Typography component="h1" variant="h5" sx={{ fontFamily: 'Michroma, sans-serif', fontWeight: 700 }}>
-                    Seguros Univida
-                </Typography>
+                    {/* --- ÍCONO AÑADIDO --- */}
+                    <Flex justify="center">
+                        <Avatar 
+                            size={64} 
+                            icon={<LockOutlined />} // Ícono de candado
+                            style={{ backgroundColor: '#1677ff', marginBottom: '16px' }}
+                        />
+                    </Flex>
+                    {/* --- FIN DE ÍCONO --- */}
 
-                {/* El formulario */}
-                <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-                    <TextField
-                        label="Usuario"
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        required
-                        onChange={e => setUsername(e.target.value)}
-                    />
-                    <TextField
-                        label="Contraseña"
-                        type="password"
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        required
-                        onChange={e => setPassword(e.target.value)}
-                    />
+                    <Typography.Title level={2} style={{ textAlign: 'center', marginBottom: '28px', fontFamily: 'Michroma, sans-serif' }}>
+                        Seguros Univida
+                    </Typography.Title>
 
-                    {/* Mensaje de error */}
                     {error && (
-                        <Typography color="error" align="center" sx={{ mt: 1 }}>
-                            {error}
-                        </Typography>
+                        <Alert
+                            message={error}
+                            type="error"
+                            showIcon
+                            style={{ marginBottom: '24px' }}
+                        />
                     )}
 
-                    {/* Botón de Entrar */}
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        color="primary"
-                        fullWidth
-                        disabled={loading} // Se deshabilita mientras carga
-                        sx={{ mt: 3, mb: 2, padding: '10px', fontFamily: 'Michroma, sans-serif', fontWeight: 700}}
+                    {/* Formulario de Ant Design */}
+                    <Form
+                        name="login"
+                        onFinish={onFinish}
+                        autoComplete="off"
+                        initialValues={{ remember: true }}
                     >
-                        {loading ? "Cargando..." : "Iniciar Sesión"}
-                    </Button>
-                </Box>
-            </Box>
-        </Container>
+                        <Form.Item
+                            name="username"
+                            rules={[{ required: true, message: '¡Por favor ingresa tu usuario!' }]}
+                        >
+                            <Input
+                                prefix={<UserOutlined />}
+                                placeholder="Usuario"
+                                size="large"
+                            />
+                        </Form.Item>
+                        
+                        <Form.Item
+                            name="password"
+                            rules={[{ required: true, message: '¡Por favor ingresa tu contraseña!' }]}
+                        >
+                            <Input.Password
+                                prefix={<LockOutlined />}
+                                placeholder="Contraseña"
+                                size="large"
+                            />
+                        </Form.Item>
+                        <Flex justify='center' style={{ marginTop: '-12px', marginBottom: '12px'}}>
+                            <Link href="/forgot-password" style={{ fontSize: '14px'}}>
+                                ¿Olvidaste tu contraseña?
+                            </Link>
+                        </Flex>
+                        <Form.Item>
+                            <Button
+                                type="primary"
+                                htmlType="submit"
+                                style={{ width: '100%', fontFamily: 'Michroma, sans-serif', padding: '10px 0' }}
+                                size="large"
+                                loading={loading}
+                            >
+                                Iniciar Sesión
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </div>
+                
+            </Content>
+        </Layout>
     );
 }
 

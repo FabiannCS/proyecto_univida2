@@ -102,6 +102,22 @@ const AdminLayout: React.FC = () => {
     },
   ];
 
+/*
+    EN COMENTARIO POR SI ESTE CODIGO SIRVE PARA SELECCIONAR EL ITEM ACTUAL DEL MENU
+const currentSelectedKey = useMemo(() => {
+    const currentPath = location.pathname; // Ej: "/admin-agentes/crear"
+    
+    // Busca en los items del menú (que tienen <Link to="...">)
+    // y encuentra el que "coincide" con el inicio de la URL actual
+    const foundItem = menuItems.find(item => 
+      // @ts-ignore
+      currentPath.startsWith(item.label.props.to)
+    );
+    
+    // Si encuentra uno, usa su 'key'. Si no (ej. en una ruta desconocida), usa '1'
+    return foundItem ? [foundItem.key] : ['1']; 
+  }, [location.pathname, menuItems]);*/
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed} width={240} style={{background: '#212121'}}>
