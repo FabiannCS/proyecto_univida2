@@ -172,9 +172,11 @@ const AdminEditarAgentePage: React.FC = () => {
                          {/* Puedes añadir aquí los otros campos del perfil Agente (comisión, etc.) */}
                     </Row>
                     <Item>
-                        <Button type="primary" htmlType="submit" loading={loading} style={{ marginTop: '16px' }}>
+                        <center>
+                        <Button type="primary" htmlType="submit" loading={loading} style={{ marginTop: '8px', fontFamily: 'Michroma, sans-serif', padding: '17px 45px'}}>
                             Guardar Cambios
                         </Button>
+                        </center>
                     </Item>
                 </Form>
             </Content>

@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './LoginPage';
+import ForgotPasswordPage from './ForgotPasswordPage';
 
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -25,7 +26,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Ruta de Login (pública) */}
-        <Route path="/" element={<LoginPage />} /> 
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} /> 
 
         {/* --- RUTAS DE ADMINISTRADOR --- */}
         <Route element={<ProtectedRoute />}> 
