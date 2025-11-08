@@ -8,6 +8,7 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 // Importa las herramientas para decodificar el token y navegar
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
+import { authService } from './services/authService';
 
 function LoginPage() {
     const navigate = useNavigate(); // Hook para redirigir
@@ -28,7 +29,8 @@ function LoginPage() {
         .then(response => {
             setLoading(false);
             const accessToken = response.data.access;
-            localStorage.setItem('accessToken', accessToken);
+            const refreshToken = response.data.refresh;
+            authService.setTokens(accessToken, refreshToken);
 
             try {
                 // Decodifica el token para leer el rol

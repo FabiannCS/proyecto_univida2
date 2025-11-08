@@ -166,9 +166,13 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
 
         # --- Añade tus datos personalizados ---
-        token['rol'] = user.rol 
+        # Añade todos los datos del usuario que necesites
         token['username'] = user.username
-        # --- Fin ---
+        token['first_name'] = user.first_name
+        token['last_name'] = user.last_name
+        token['email'] = user.email
+        token['rol'] = user.rol
+
 
         return token
 class MyTokenObtainPairView(TokenObtainPairView):

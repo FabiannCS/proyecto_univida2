@@ -1,14 +1,20 @@
-// en frontend/src/ProtectedRoute.tsx
+// en frontend/src/ProtectedRoute.tsx - VERSIÓN MEJORADA
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { authService } from './services/authService';
 
 const ProtectedRoute = () => {
-    // Revisa si el token existe en el localStorage
-    const token = localStorage.getItem('accessToken');
+  // Verificar autenticación usando el servicio
+  const isAuthenticated = authService.isAuthenticated();
 
-    // Si el token existe, permite el acceso (Outlet renderiza la ruta hija)
-    // Si no, redirige a la página de login ("/")
-    return token ? <Outlet /> : <Navigate to="/" replace />;
+  // Si no está autenticado, redirigir al login
+  if (!isAuthenticated) {
+    authService.logout(); // Limpiar cualquier dato residual
+    return <Navigate to="/" replace />;
+  }
+
+  // Si está autenticado, renderizar el contenido
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
