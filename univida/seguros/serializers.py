@@ -207,7 +207,7 @@ class CrearClienteSerializer(serializers.ModelSerializer):
             'email': validated_data.pop('email', ''),
             'telefono': validated_data.pop('telefono', ''),
             'rol': 'CLIENTE',
-            'es_cliente': True
+           # 'es_cliente': True
         }
         
         # Crear el usuario
