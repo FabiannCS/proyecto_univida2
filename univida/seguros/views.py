@@ -324,7 +324,7 @@ def eliminar_cliente(request, cliente_id):
     
     return Response({'mensaje': 'Cliente desactivado correctamente'}, status=status.HTTP_204_NO_CONTENT)
 
-# En seguros/views.py - AÑADE ESTA VISTA PARA REACTIVAR AGENTES:
+# PARA REACTIVAR AGENTES:
 
 @api_view(['PATCH'])
 @permission_classes([IsAdminUser])
@@ -352,7 +352,7 @@ def reactivar_agente(request, agente_id):
         
         return Response({'mensaje': 'Agente reactivado correctamente'}, status=status.HTTP_200_OK)
     
-# En seguros/views.py - AÑADE ESTAS VISTAS PARA CLIENTES:
+# VISTAS PARA CLIENTES:
 
 @api_view(['PATCH'])
 @permission_classes([IsAdminUser])
@@ -371,3 +371,46 @@ def reactivar_cliente(request, cliente_id):
         cliente.usuario.save()
         
         return Response({'mensaje': 'Cliente reactivado correctamente'}, status=status.HTTP_200_OK)
+    
+    # API para crear póliza
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def crear_poliza(request):
+    """Crea una nueva póliza."""
+    if request.method == 'POST':
+        serializer = CrearPolizaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+#api para cambiar estado de poliza
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def activar_poliza(request, poliza_id):
+    """Activa una póliza en estado cotización"""
+    try:
+        poliza = Poliza.objects.get(id=poliza_id)
+        if poliza.estado == 'cotizacion':
+            poliza.estado = 'activa'
+            poliza.save()
+            return Response({'mensaje': 'Póliza activada correctamente'})
+        else:
+            return Response({'error': 'La póliza no está en cotización'}, status=400)
+    except Poliza.DoesNotExist:
+        return Response({'error': 'Póliza no encontrada'}, status=404)
+
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def cancelar_poliza(request, poliza_id):
+    """Cancela una póliza en estado cotización"""
+    try:
+        poliza = Poliza.objects.get(id=poliza_id)
+        if poliza.estado == 'cotizacion':
+            poliza.estado = 'cancelada'
+            poliza.save()
+            return Response({'mensaje': 'Póliza cancelada correctamente'})
+        else:
+            return Response({'error': 'Solo se pueden cancelar pólizas en cotización'}, status=400)
+    except Poliza.DoesNotExist:
+        return Response({'error': 'Póliza no encontrada'}, status=404)

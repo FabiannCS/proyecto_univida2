@@ -1,33 +1,84 @@
-// en frontend/src/pages/AdminDashboardPage.tsx - VERSIÓN CORREGIDA
+// en frontend/src/pages/AdminDashboardPage.tsx - VERSIÓN LIMPIA
 import React, { useState, useEffect, useMemo } from 'react';
-import { Layout, Typography, Row, Col, Card, Statistic, message, Spin } from 'antd';
-import { TeamOutlined, FileTextOutlined, ExclamationCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { 
+  Layout, 
+  Typography, 
+  Row, 
+  Col, 
+  Card, 
+  Statistic, 
+  message, 
+  Spin,
+  Progress,
+  Tag,
+  List,
+  Avatar
+} from 'antd';
+import { 
+  TeamOutlined, 
+  UserOutlined,
+  FileTextOutlined, 
+  ExclamationCircleOutlined, 
+  CheckCircleOutlined,
+  DollarOutlined,
+  SafetyCertificateOutlined,
+  BarChartOutlined
+} from '@ant-design/icons';
 import axios from 'axios';
-import { Pie } from '@ant-design/charts';
+import { useNavigate } from 'react-router-dom';
 
 const { Content } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 interface Agente {
   id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
 }
 
 interface Poliza {
   id: number;
+  numero_poliza: string;
   estado: string;
+  suma_asegurada: string;
+  prima_anual: string;
+  cliente_info: {
+    usuario_info: {
+      first_name: string;
+      last_name: string;
+    };
+  };
 }
 
 interface Siniestro {
   id: number;
+  numero_siniestro: string;
   estado: string;
-  monto_aprobado: string | null;
+  monto_reclamado: string;
+  tipo_siniestro: string;
+  poliza_info: {
+    numero_poliza: string;
+  };
+}
+
+interface Cliente {
+  id: number;
+  usuario_info: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
 }
 
 const AdminDashboardPage: React.FC = () => {
   const [agentes, setAgentes] = useState<Agente[]>([]);
   const [polizas, setPolizas] = useState<Poliza[]>([]);
   const [siniestros, setSiniestros] = useState<Siniestro[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const getToken = () => localStorage.getItem('accessToken');
 
@@ -43,23 +94,33 @@ const AdminDashboardPage: React.FC = () => {
         }
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [agentesRes, polizasRes, siniestrosRes] = await Promise.all([
+        // Hacer peticiones con manejo de errores individual
+        const requests = [
           axios.get('http://127.0.0.1:8000/api/agentes/', { headers }),
           axios.get('http://127.0.0.1:8000/api/polizas/', { headers }),
-          axios.get('http://127.0.0.1:8000/api/siniestros/', { headers })
-        ]);
+          axios.get('http://127.0.0.1:8000/api/siniestros/', { headers }),
+          axios.get('http://127.0.0.1:8000/api/clientes/', { headers })
+        ];
 
-        setAgentes(agentesRes.data);
-        setPolizas(polizasRes.data);
-        setSiniestros(siniestrosRes.data);
+        const responses = await Promise.allSettled(requests);
+
+        // Procesar respuestas individualmente
+        responses.forEach((response, index) => {
+          if (response.status === 'fulfilled') {
+            switch (index) {
+              case 0: setAgentes(response.value.data); break;
+              case 1: setPolizas(response.value.data); break;
+              case 2: setSiniestros(response.value.data); break;
+              case 3: setClientes(response.value.data); break;
+            }
+          } else {
+            console.warn(`Error cargando datos del índice ${index}:`, response.reason);
+          }
+        });
 
       } catch (error: any) {
-        console.error('Error al cargar datos del dashboard:', error);
-        if (error.response?.status === 401) {
-          message.error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
-        } else {
-          message.error('Error al cargar los datos del panel.');
-        }
+        console.error('Error general al cargar datos:', error);
+        message.error('Error al cargar algunos datos del panel.');
       } finally {
         setLoading(false);
       }
@@ -68,51 +129,55 @@ const AdminDashboardPage: React.FC = () => {
     fetchAllData();
   }, []);
 
-  const { stats, pieData } = useMemo(() => {
-    // Cálculos básicos de estadísticas
+  // Calcular estadísticas
+  const dashboardStats = useMemo(() => {
     const polizasActivas = polizas.filter(p => p.estado === 'activa').length;
+    const polizasCotizacion = polizas.filter(p => p.estado === 'cotizacion').length;
     const siniestrosPendientes = siniestros.filter(s => 
       s.estado === 'reportado' || s.estado === 'en_revision'
     ).length;
-    const totalAgentes = agentes.length;
-    const totalPagado = siniestros
-      .filter(s => s.estado === 'pagado' && s.monto_aprobado)
-      .reduce((sum, s) => sum + parseFloat(s.monto_aprobado!), 0);
-
-    const kpiStats = { 
-      polizasActivas, 
-      siniestrosPendientes, 
-      totalAgentes, 
-      totalPagado 
-    };
-
-    // Preparar datos para el gráfico de pastel - VERSIÓN CORREGIDA
-    const polizasPorEstado: { [key: string]: number } = {};
+    const siniestrosAprobados = siniestros.filter(s => s.estado === 'aprobado').length;
     
-    polizas.forEach(poliza => {
-      const estado = poliza.estado || 'Desconocido';
-      polizasPorEstado[estado] = (polizasPorEstado[estado] || 0) + 1;
-    });
+    const totalPrimas = polizas.reduce((sum, poliza) => 
+      sum + parseFloat(poliza.prima_anual || '0'), 0
+    );
+    
+    const totalReclamado = siniestros.reduce((sum, siniestro) => 
+      sum + parseFloat(siniestro.monto_reclamado || '0'), 0
+    );
 
-    // Calcular porcentajes manualmente
-    const totalPolizas = polizas.length;
-    const pieChartData = Object.keys(polizasPorEstado).map(estado => {
-      const value = polizasPorEstado[estado];
-      const percentage = totalPolizas > 0 ? ((value / totalPolizas) * 100).toFixed(1) : '0';
-      
-      return {
-        type: estado.charAt(0).toUpperCase() + estado.slice(1), // Capitalizar primera letra
-        value: value,
-        percentage: `${percentage}%`
-      };
-    });
+    // Distribución de pólizas por estado
+    const distribucionPolizas = polizas.reduce((acc, poliza) => {
+      const estado = poliza.estado || 'desconocido';
+      acc[estado] = (acc[estado] || 0) + 1;
+      return acc;
+    }, {} as { [key: string]: number });
 
-    return { stats: kpiStats, pieData: pieChartData };
-  }, [polizas, siniestros, agentes]);
+    return {
+      totalAgentes: agentes.length,
+      totalClientes: clientes.length,
+      totalPolizas: polizas.length,
+      totalSiniestros: siniestros.length,
+      polizasActivas,
+      polizasCotizacion,
+      siniestrosPendientes,
+      siniestrosAprobados,
+      totalPrimas,
+      totalReclamado,
+      distribucionPolizas
+    };
+  }, [agentes, clientes, polizas, siniestros]);
+
+  // Obtener últimos registros para mostrar
+  const ultimosRegistros = useMemo(() => ({
+    ultimasPolizas: polizas.slice(-5).reverse(),
+    ultimosSiniestros: siniestros.slice(-5).reverse(),
+    agentesRecientes: agentes.slice(-5).reverse()
+  }), [polizas, siniestros, agentes]);
 
   if (loading) {
     return (
-      <Layout style={{ padding: '50px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <Layout style={{ padding: '50px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
         <Spin size="large" />
         <div style={{ marginTop: '16px' }}>Cargando datos del dashboard...</div>
       </Layout>
@@ -122,23 +187,40 @@ const AdminDashboardPage: React.FC = () => {
   return (
     <Layout>
       <Content style={{ padding: '24px' }}>
-        <Title level={2} style={{ 
-          marginBottom: '24px', 
-          textAlign: 'center', 
-          fontFamily: 'Michroma, sans-serif', 
-          fontSize: '1.7rem' 
-        }}>
-          Reportes del Administrador
-        </Title>
-        
-        {/* Fila de Tarjetas de Estadísticas */}
-        <Row gutter={16}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <Title level={1} style={{ 
+            fontFamily: 'Michroma, sans-serif', 
+            fontSize: '2.5rem',
+            color: '#1890ff',
+            marginBottom: '8px'
+          }}>
+            Seguros Univida
+          </Title>
+          <Text style={{ fontSize: '1.2rem', color: '#666' }}>
+            Panel de Control Administrativo
+          </Text>
+        </div>
+
+        {/* Estadísticas Principales */}
+        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
           <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
-                title="Total de Agentes"
-                value={stats.totalAgentes}
+                title="Total Clientes"
+                value={dashboardStats.totalClientes}
+                prefix={<UserOutlined />}
+                valueStyle={{ color: '#3f8600' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card>
+              <Statistic
+                title="Total Agentes"
+                value={dashboardStats.totalAgentes}
                 prefix={<TeamOutlined />}
+                valueStyle={{ color: '#1890ff' }}
               />
             </Card>
           </Col>
@@ -146,8 +228,9 @@ const AdminDashboardPage: React.FC = () => {
             <Card>
               <Statistic
                 title="Pólizas Activas"
-                value={stats.polizasActivas}
-                prefix={<FileTextOutlined />}
+                value={dashboardStats.polizasActivas}
+                prefix={<SafetyCertificateOutlined />}
+                valueStyle={{ color: '#52c41a' }}
               />
             </Card>
           </Col>
@@ -155,77 +238,196 @@ const AdminDashboardPage: React.FC = () => {
             <Card>
               <Statistic
                 title="Siniestros Pendientes"
-                value={stats.siniestrosPendientes}
+                value={dashboardStats.siniestrosPendientes}
                 prefix={<ExclamationCircleOutlined />}
-                valueStyle={{ color: '#cf1322' }}
+                valueStyle={{ color: '#faad14' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Segunda Fila de Estadísticas */}
+        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
+          <Col xs={24} sm={12} md={6}>
+            <Card>
+              <Statistic
+                title="Total Pólizas"
+                value={dashboardStats.totalPolizas}
+                prefix={<FileTextOutlined />}
               />
             </Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
-                title="Total Pagado (Siniestros)"
-                value={stats.totalPagado}
-                prefix={<CheckCircleOutlined />}
-                suffix="$"
+                title="Primas Anuales"
+                value={dashboardStats.totalPrimas}
+                prefix={<DollarOutlined />}
                 precision={2}
+                suffix="$"
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card>
+              <Statistic
+                title="Siniestros Aprobados"
+                value={dashboardStats.siniestrosAprobados}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card>
+              <Statistic
+                title="Monto Reclamado"
+                value={dashboardStats.totalReclamado}
+                prefix={<BarChartOutlined />}
+                precision={2}
+                suffix="$"
+                valueStyle={{ color: '#faad14' }}
               />
             </Card>
           </Col>
         </Row>
-        
-        {/* Sección de Gráficos */}
-        <Row gutter={16} style={{ marginTop: '24px' }}>
-          <Col xs={24} md={12}>
-            <Card title="Distribución de Pólizas por Estado">
-              {pieData.length === 0 ? (
-                <div style={{ 
-                  padding: '40px', 
-                  textAlign: 'center', 
-                  color: '#999' 
-                }}>
-                  No hay datos de pólizas para mostrar.
-                </div>
-              ) : (
-                <Pie
-                  data={pieData}
-                  angleField="value"
-                  colorField="type"
-                  radius={0.8}
-                  label={{
-                    type: 'outer',                    
-                    content: '{name} {value}',
-                  }}
-                 
-                  height={300}
-                />
-              )}
+
+        {/* Distribución de Pólizas */}
+        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
+          <Col xs={24} lg={12}>
+            <Card 
+              title="Distribución de Pólizas por Estado" 
+              extra={<Tag color="blue">{dashboardStats.totalPolizas} total</Tag>}
+            >
+              {Object.entries(dashboardStats.distribucionPolizas).map(([estado, cantidad]) => {
+                const porcentaje = dashboardStats.totalPolizas > 0 
+                  ? (cantidad / dashboardStats.totalPolizas) * 100 
+                  : 0;
+                
+                return (
+                  <div key={estado} style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <Text strong style={{ textTransform: 'capitalize' }}>
+                        {estado}
+                      </Text>
+                      <Text>
+                        {cantidad} ({porcentaje.toFixed(1)}%)
+                      </Text>
+                    </div>
+                    <Progress 
+                      percent={porcentaje} 
+                      size="small"
+                      strokeColor={{
+                        '0%': '#108ee9',
+                        '100%': '#87d068',
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </Card>
           </Col>
-          
-          {/* Puedes añadir otro gráfico aquí */}
-          <Col xs={24} md={12}>
-            <Card title="Resumen General">
-              <div style={{ padding: '20px' }}>
-                <Statistic
-                  title="Total de Pólizas"
-                  value={polizas.length}
-                  prefix={<FileTextOutlined />}
-                  style={{ marginBottom: '16px' }}
-                />
-                <Statistic
-                  title="Total de Siniestros"
-                  value={siniestros.length}
-                  prefix={<ExclamationCircleOutlined />}
-                  style={{ marginBottom: '16px' }}
-                />
-                <Statistic
-                  title="Tasa de Siniestros"
-                  value={polizas.length > 0 ? ((siniestros.length / polizas.length) * 100).toFixed(2) : 0}
-                  suffix="%"
-                  precision={2}
-                />
-              </div>
+
+          {/* Últimas Pólizas */}
+          <Col xs={24} lg={12}>
+            <Card 
+              title="Últimas Pólizas" 
+              extra={<a onClick={() => navigate('/admin-polizas')}>Ver todas</a>}
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={ultimosRegistros.ultimasPolizas}
+                renderItem={poliza => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={<Avatar icon={<FileTextOutlined />} />}
+                      title={
+                        <a onClick={() => navigate(`/admin-polizas/${poliza.id}`)}>
+                          {poliza.numero_poliza}
+                        </a>
+                      }
+                      description={
+                        <div>
+                          <div>{poliza.cliente_info?.usuario_info?.first_name} {poliza.cliente_info?.usuario_info?.last_name}</div>
+                          <Tag color={poliza.estado === 'activa' ? 'green' : 'orange'}>
+                            {poliza.estado}
+                          </Tag>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+                locale={{ emptyText: 'No hay pólizas recientes' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Últimos Siniestros y Agentes */}
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={12}>
+            <Card 
+              title="Siniestros Recientes" 
+              extra={<a onClick={() => navigate('/admin-siniestros')}>Ver todos</a>}
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={ultimosRegistros.ultimosSiniestros}
+                renderItem={siniestro => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={<Avatar icon={<ExclamationCircleOutlined />} />}
+                      title={
+                        <a onClick={() => navigate(`/admin-siniestros/${siniestro.id}`)}>
+                          {siniestro.numero_siniestro}
+                        </a>
+                      }
+                      description={
+                        <div>
+                          <div>Póliza: {siniestro.poliza_info?.numero_poliza}</div>
+                          <div>
+                            <Tag color={
+                              siniestro.estado === 'reportado' ? 'red' : 
+                              siniestro.estado === 'en_revision' ? 'orange' : 'green'
+                            }>
+                              {siniestro.estado}
+                            </Tag>
+                            <Tag>{siniestro.tipo_siniestro}</Tag>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+                locale={{ emptyText: 'No hay siniestros recientes' }}
+              />
+            </Card>
+          </Col>
+
+          <Col xs={24} lg={12}>
+            <Card 
+              title="Agentes Recientes" 
+              extra={<a onClick={() => navigate('/admin-agentes')}>Ver todos</a>}
+            >
+              <List
+                itemLayout="horizontal"
+                dataSource={ultimosRegistros.agentesRecientes}
+                renderItem={agente => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={<Avatar icon={<TeamOutlined />} />}
+                      title={agente.username}
+                      description={
+                        <div>
+                          <div>{agente.first_name} {agente.last_name}</div>
+                          <div>{agente.email}</div>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+                locale={{ emptyText: 'No hay agentes recientes' }}
+              />
             </Card>
           </Col>
         </Row>

@@ -5,6 +5,7 @@
   "proxy": "http://localhost:8000",
   "dependencies": {
     "@ant-design/charts": "^2.6.6",
+    "@antv/g2plot": "^2.4.35",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",

@@ -1,18 +1,18 @@
 // en frontend/src/pages/polizas/AdminListarPolizasPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Table, Button, message, Space, Tag } from 'antd';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { Layout, Typography, Table, Button, message, Space, Tag, Popconfirm } from 'antd';
+import { PlusOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { authService } from '../../services/authService';
 
 const { Content } = Layout;
 const { Title } = Typography;
 
-// Interfaz para los datos de la Póliza (basada en tu serializers.txt)
 interface Poliza {
   id: number;
   numero_poliza: string;
-  cliente_info: { // Esta estructura viene de tu PolizaSerializer
+  cliente_info: {
     usuario_info: {
       first_name: string;
       last_name: string;
@@ -41,7 +41,6 @@ const AdminListarPolizasPage: React.FC = () => {
       }
       
       const headers = { Authorization: `Bearer ${token}` };
-      // ¡Asegúrate de que tu compañero tenga este endpoint '/api/polizas/' listo!
       const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
       setPolizas(response.data);
       
@@ -53,10 +52,48 @@ const AdminListarPolizasPage: React.FC = () => {
     }
   };
 
+  // --- Función para activar una póliza ---
+  const activarPoliza = async (polizaId: number) => {
+    try {
+      const token = authService.getToken();
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/activar/`, {}, { headers });
+      message.success('Póliza activada correctamente');
+      fetchPolizas(); // Recargar lista
+    } catch (error: any) {
+      console.error('Error al activar póliza:', error);
+      if (error.response?.data?.error) {
+        message.error(`Error: ${error.response.data.error}`);
+      } else {
+        message.error('Error al activar la póliza');
+      }
+    }
+  };
+
+  // --- Función para cancelar una póliza ---
+  const cancelarPoliza = async (polizaId: number) => {
+    try {
+      const token = authService.getToken();
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/cancelar/`, {}, { headers });
+      message.success('Póliza cancelada correctamente');
+      fetchPolizas(); // Recargar lista
+    } catch (error: any) {
+      console.error('Error al cancelar póliza:', error);
+      if (error.response?.data?.error) {
+        message.error(`Error: ${error.response.data.error}`);
+      } else {
+        message.error('Error al cancelar la póliza');
+      }
+    }
+  };
+
   // Carga las pólizas una vez al montar la página
   useEffect(() => {
     fetchPolizas();
-  }, []); // El [] evita el bucle infinito
+  }, []);
 
   // --- Columnas para la Tabla de Pólizas ---
   const columns = [
@@ -69,7 +106,6 @@ const AdminListarPolizasPage: React.FC = () => {
       title: 'Cliente',
       dataIndex: 'cliente_info',
       key: 'cliente',
-      // Renderizamos el nombre completo desde la info anidada
       render: (cliente_info: Poliza['cliente_info']) => 
         `${cliente_info.usuario_info.first_name} ${cliente_info.usuario_info.last_name}`
     },
@@ -79,10 +115,26 @@ const AdminListarPolizasPage: React.FC = () => {
       key: 'estado',
       render: (estado: string) => {
         let color = 'geekblue';
-        if (estado === 'activa') color = 'green';
-        if (estado === 'vencida') color = 'volcano';
-        if (estado === 'inactiva') color = 'grey';
-        return <Tag color={color}>{estado.toUpperCase()}</Tag>;
+        let text = estado.toUpperCase();
+        
+        if (estado === 'activa') {
+          color = 'green';
+          text = 'ACTIVA';
+        } else if (estado === 'vencida') {
+          color = 'volcano';
+          text = 'VENCIDA';
+        } else if (estado === 'cotizacion') {
+          color = 'orange';
+          text = 'COTIZACIÓN';
+        } else if (estado === 'cancelada') {
+          color = 'red';
+          text = 'CANCELADA';
+        } else if (estado === 'inactiva') {
+          color = 'grey';
+          text = 'INACTIVA';
+        }
+        
+        return <Tag color={color}>{text}</Tag>;
       }
     },
     {
@@ -96,10 +148,68 @@ const AdminListarPolizasPage: React.FC = () => {
       key: 'acciones',
       render: (_: any, record: Poliza) => (
         <Space size="middle">
-          <Button icon={<EyeOutlined />} onClick={() => navigate(`/admin-polizas/${record.id}`)}>
-            Ver Detalles
+          {/* Botón Ver Detalles - Siempre visible */}
+          <Button 
+            icon={<EyeOutlined />} 
+            onClick={() => navigate(`/admin-polizas/${record.id}`)}
+            size="small"
+          >
+            Ver
           </Button>
-          {/* Aquí irán los botones de Editar/Eliminar Póliza */}
+
+          {/* Botones específicos por estado */}
+          {record.estado === 'cotizacion' && (
+            <>
+              <Button 
+                type="primary" 
+                icon={<CheckCircleOutlined />}
+                onClick={() => activarPoliza(record.id)}
+                size="small"
+                style={{ background: '#52c41a', borderColor: '#52c41a' }}
+              >
+                Activar
+              </Button>
+              
+              <Popconfirm
+                title="¿Estás seguro de cancelar esta póliza?"
+                description="Esta acción no se puede deshacer."
+                onConfirm={() => cancelarPoliza(record.id)}
+                okText="Sí, cancelar"
+                cancelText="No"
+                okType="danger"
+              >
+                <Button 
+                  danger 
+                  icon={<CloseCircleOutlined />}
+                  size="small"
+                >
+                  Cancelar
+                </Button>
+              </Popconfirm>
+            </>
+          )}
+
+          {record.estado === 'activa' && (
+            <Tag color="green" style={{ padding: '4px 8px', fontSize: '12px' }}>
+              ⚡ Activa
+            </Tag>
+          )}
+
+          {record.estado === 'vencida' && (
+            <Button 
+              type="dashed" 
+              size="small"
+              onClick={() => message.info('Funcionalidad de renovación en desarrollo')}
+            >
+              Renovar
+            </Button>
+          )}
+
+          {record.estado === 'cancelada' && (
+            <Tag color="red" style={{ padding: '4px 8px', fontSize: '12px' }}>
+              ❌ Cancelada
+            </Tag>
+          )}
         </Space>
       ),
     },
@@ -109,12 +219,15 @@ const AdminListarPolizasPage: React.FC = () => {
   return (
     <Layout>
       <Content style={{ padding: '24px' }}>
-        <Title level={2} style={{fontFamily: 'Michroma, sans-serif', fontSize: '1.7rem'}}>Gestión de Pólizas</Title>
+        <Title level={2} style={{fontFamily: 'Michroma, sans-serif', fontSize: '1.7rem'}}>
+          Gestión de Pólizas
+        </Title>
+        
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => navigate('/admin-polizas/crear')} // Botón para ir al formulario de creación
-          style={{ marginBottom: 16,  fontFamily: 'Michroma, sans-serif'}}
+          onClick={() => navigate('/admin-polizas/crear')}
+          style={{ marginBottom: 16, fontFamily: 'Michroma, sans-serif'}}
         >
           Crear Nueva Póliza
         </Button>
@@ -125,6 +238,12 @@ const AdminListarPolizasPage: React.FC = () => {
           loading={loading}
           rowKey="id"
           bordered
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} de ${total} pólizas`,
+          }}
         />
       </Content>
     </Layout>
