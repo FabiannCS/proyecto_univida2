@@ -1,6 +1,6 @@
-// en frontend/src/layouts/AdminLayout.tsx - VERSIÓN CORREGIDA
+// en frontend/src/layouts/AdminLayout.tsx
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, Typography, Avatar, Dropdown, Space, message } from 'antd';
+import { Layout, Menu, Button, Typography, Avatar, Dropdown, Breadcrumb } from 'antd';
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -8,29 +8,34 @@ import {
   UserOutlined,
   SolutionOutlined,
   FileTextOutlined,
-  LogoutOutlined,
   ExclamationCircleOutlined,
   UserSwitchOutlined,
-  SettingOutlined
+  SettingOutlined,
+  LogoutOutlined,
+  HomeOutlined,
+  MoreOutlined,
+  SearchOutlined,
+  BellOutlined,
+  QuestionCircleOutlined
 } from '@ant-design/icons';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useSessionTimeout } from '../hooks/useSessionTimeout';
 import type { MenuProps } from 'antd';
+import { Space, Input, Badge, Tooltip } from 'antd';
 
 const { Header, Sider, Content } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const AdminLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [userName, setUserName] = useState<string>('Usuario');
   const [userRole, setUserRole] = useState<string>('');
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Usar el hook de timeout de sesión
   useSessionTimeout();
 
-  // Cargar información del usuario al montar el componente
   useEffect(() => {
     const userInfo = authService.getUserInfo();
     if (userInfo) {
@@ -44,27 +49,20 @@ const AdminLayout: React.FC = () => {
     navigate('/');
   };
 
-  // Items del dropdown de usuario
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       icon: <UserSwitchOutlined />,
       label: 'Mi Perfil',
-      onClick: () => {
-        message.info('Funcionalidad de perfil en desarrollo');
-      },
+      onClick: () => navigate('/admin-perfil'),
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
       label: 'Configuración',
-      onClick: () => {
-        message.info('Funcionalidad de configuración en desarrollo');
-      },
+      onClick: () => {},
     },
-    {
-      type: 'divider',
-    },
+    { type: 'divider' },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
@@ -102,93 +100,174 @@ const AdminLayout: React.FC = () => {
     },
   ];
 
+  const getSelectedKey = () => {
+    const path = location.pathname;
+    if (path.startsWith('/admin-agentes')) return ['2'];
+    if (path.startsWith('/admin-clientes')) return ['3'];
+    if (path.startsWith('/admin-polizas')) return ['4'];
+    if (path.startsWith('/admin-siniestros')) return ['5'];
+    return ['1'];
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} width={240} style={{background: '#212121'}}>
-        <Title level={4} style={{ 
-          fontWeight: 'bold', 
-          margin: '16px 0',  
-          color: 'white', 
-          textAlign: 'center', 
-          lineHeight: '32px', 
-          fontFamily: "'Michroma', sans-serif",
-          fontSize: '1.1rem'
-        }}>
-          {collapsed ? 'SU' : 'SegurosUnivida'}
-        </Title>
-        
-        <Menu 
-          theme="dark" 
-          mode="inline" 
-          defaultSelectedKeys={['1']}
-          items={menuItems}
-          className='custom-menu'
-        />
-        <style>
-          {`
-            .custom-menu.ant-menu-dark {
-              background: #212121;
-            }
-            .user-dropdown-trigger {
-              padding: 8px 12px;
-              border-radius: 6px;
-              transition: background-color 0.3s;
-              cursor: pointer;
-            }
-            .user-dropdown-trigger:hover {
-              background-color: #f5f5f5;
-            }
-          `}
-        </style>
+      <Sider 
+        trigger={null} 
+        collapsible 
+        collapsed={collapsed} 
+        width={260}
+        style={{
+          background: '#212121',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          zIndex: 100,
+        }}
+      >
+        {/* --- CONTENIDO DEL SIDER (Dentro de las etiquetas, NO como prop) --- */}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            
+            {/* 1. LOGO */}
+            <div style={{ padding: '16px', textAlign: 'center', flexShrink: 0 }}>
+                <Title level={4} style={{ 
+                fontWeight: 'bold', 
+                margin: 0,  
+                color: 'white', 
+                fontFamily: "'Michroma', sans-serif",
+                fontSize: collapsed ? '1rem' : '1.1rem',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+                }}>
+                {collapsed ? 'SU' : 'SegurosUnivida'}
+                </Title>
+            </div>
+
+            {/* 2. MENÚ */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                <Menu 
+                theme="dark" 
+                mode="inline" 
+                selectedKeys={getSelectedKey()}
+                items={menuItems}
+                style={{ background: '#212121', borderRight: 0 }}
+                />
+            </div>
+
+            {/* 3. PERFIL DE USUARIO (Abajo) */}
+            <div style={{ 
+                padding: '16px', 
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                background: '#1a1a1a',
+                flexShrink: 0 
+            }}>
+                <Dropdown 
+                    menu={{ items: userMenuItems }} 
+                    placement="topRight" 
+                    trigger={['click']}
+                >
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        transition: 'background 0.3s',
+                    }}
+                    className="user-profile-trigger"
+                    >
+                        <Avatar 
+                            icon={<UserOutlined />} 
+                            style={{ 
+                                background: userRole === 'ADMIN' ? '#f56a00' : '#7265e6',
+                                flexShrink: 0 
+                            }} 
+                        />
+                        
+                        {!collapsed && (
+                            <div style={{ marginLeft: '12px', overflow: 'hidden', flex: 1 }}>
+                                <Text style={{ color: 'white', display: 'block', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {userName}
+                                </Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', display: 'block' }}>
+                                    {userRole.toLowerCase()}
+                                </Text>
+                            </div>
+                        )}
+                        
+                        {!collapsed && <MoreOutlined style={{ color: 'rgba(255,255,255,0.5)' }} />}
+                    </div>
+                </Dropdown>
+            </div>
+        </div>
+        {/* --- FIN DEL CONTENIDO DEL SIDER --- */}
       </Sider>
       
-      <Layout>
+      {/* Layout Principal */}
+      <Layout style={{ marginLeft: collapsed ? 80 : 260, transition: 'margin-left 0.2s' }}>
         <Header style={{ 
-          padding: '0 16px', 
+          padding: '0 24px', 
           background: '#ffffff', 
           display: 'flex', 
-          justifyContent: 'space-between', 
           alignItems: 'center', 
+          justifyContent: 'space-between',
           fontFamily: "'Michroma', sans-serif",
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          height: 64,
+          position: 'sticky',
+          top: 0,
+          zIndex: 99,
+          width: '100%'
         }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: '16px', width: 64, height: 64 }}
-          />
           
-          <Dropdown 
-            menu={{ items: userMenuItems }} 
-            placement="bottomRight"
-            arrow
-            trigger={['click']}
-          >
-            <div className="user-dropdown-trigger">
-              <Space>
-                <Avatar 
-                  icon={<UserOutlined />} 
-                  style={{ 
-                    marginRight: '8px',
-                    background: userRole === 'ADMIN' ? '#f56a00' : '#7265e6'
-                  }} 
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                    {userName}
-                  </span>
-                  <span style={{ 
-                    fontSize: '12px', 
-                    color: '#666',
-                    textTransform: 'capitalize'
-                  }}>
-                    {userRole.toLowerCase()}
-                  </span>
-                </div>
-              </Space>
-            </div>
-          </Dropdown>
+          {/* IZQUIERDA: Toggle y Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ fontSize: '16px', width: 46, height: 46, marginRight: 16 }}
+            />
+            <Breadcrumb>
+              <Breadcrumb.Item href="/admin-dashboard">
+                <HomeOutlined />
+              </Breadcrumb.Item>
+              <Breadcrumb.Item>Inicio</Breadcrumb.Item>
+            </Breadcrumb>
+          </div>
+
+          {/* CENTRO: Buscador 
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', maxWidth: '500px', padding: '0 24px' }}>
+            <Input
+              placeholder="Buscar..."
+              prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+              bordered={false}
+              style={{ 
+                backgroundColor: '#f5f5f5', 
+                borderRadius: '6px',
+                padding: '6px 12px',
+                width: '100%',
+                maxWidth: '400px'
+              }}
+            />
+          </div>*/}
+
+          {/* DERECHA: Notificaciones y Ayuda */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Space size="large">
+              <Tooltip title="Ayuda">
+                <Button type="text" icon={<QuestionCircleOutlined style={{ fontSize: '18px', color: '#666' }} />} />
+              </Tooltip>
+              <Tooltip title="Notificaciones">
+                <Badge count={5} size="small" offset={[0, 5]}> 
+                  <Button type="text" icon={<BellOutlined style={{ fontSize: '18px', color: '#666' }} />} />
+                </Badge>
+              </Tooltip>
+            </Space>
+          </div>
+
         </Header>
         
         <Content style={{ 
@@ -202,6 +281,21 @@ const AdminLayout: React.FC = () => {
           <Outlet /> 
         </Content>
       </Layout>
+
+      {/* Estilos globales para componentes internos de Antd */}
+      <style>
+        {`
+          .user-profile-trigger:hover {
+            background: rgba(255,255,255,0.1);
+          }
+          /* Esto asegura que el contenedor interno del Sider ocupe toda la altura */
+          .ant-layout-sider-children {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+        `}
+      </style>
     </Layout>
   );
 };

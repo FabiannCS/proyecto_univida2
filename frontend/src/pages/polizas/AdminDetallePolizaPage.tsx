@@ -1,9 +1,10 @@
 // en frontend/src/pages/polizas/AdminDetallePolizaPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Spin, message, Descriptions, Table, Tag } from 'antd';
+import { Layout, Typography, Spin, message, Button, Descriptions, Table, Tag } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+import { ArrowLeftOutlined } from '@ant-design/icons';
 const { Content } = Layout;
 const { Title, Text } = Typography;
 
@@ -126,11 +127,20 @@ const AdminDetallePolizaPage: React.FC = () => {
   // --- Renderizado Visual de la Página ---
   return (
     <Layout>
-      <Content>
-        <Title level={2} style={{ marginBottom: '24px' }}>
+      <Content style={{ padding: '20px', margin: '10px', minHeight: '80vh'}}>
+        <Button
+          type="default"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/admin-polizas')}
+          style={{ marginBottom: '10px', fontFamily: 'Michroma, sans-serif'}}
+        >
+          Volver a Pólizas
+        </Button>
+        <center>
+        <Title level={2} style={{ marginBottom: '24px', fontFamily: 'Michroma, sans-serif' }}>
           Detalle de Póliza: {poliza.numero_poliza}
         </Title>
-
+        </center>
         {/* Componente <Descriptions> para mostrar datos clave-valor */}
         <Descriptions bordered layout="vertical" column={3}>
           
