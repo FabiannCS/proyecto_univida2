@@ -29,66 +29,80 @@ class PolizaSerializer(serializers.ModelSerializer):
         model = Poliza
         fields = [
             'id', 'numero_poliza', 'cliente_info', 'suma_asegurada', 
-            'prima_anual', 'fecha_inicio', 'fecha_vencimiento', 
-            'estado', 'beneficiarios', 'creado_en'
+            'prima_anual', 'prima_mensual', 'fecha_inicio', 'fecha_vencimiento',  # ← AÑADIDO prima_mensual
+            'estado', 'beneficiarios', 'creado_en', 'cobertura'  # ← AÑADIDO cobertura, QUITADO exclusiones
         ]
 
+# En seguros/serializers.py - ACTUALIZAR
 class CrearPolizaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poliza
-        fields = ['cliente', 'suma_asegurada', 'prima_anual', 'fecha_inicio', 'fecha_vencimiento']
+        fields = [
+            'cliente', 'agente', 'numero_poliza', 'suma_asegurada',
+            'prima_anual', 'prima_mensual', 'fecha_inicio', 
+            'fecha_vencimiento', 'cobertura', 'estado'
+        ]
+        extra_kwargs = {
+            'agente': {'required': False, 'allow_null': True}  # ← Hacer opcional
+        }
+    
+    def validate(self, data):
+        """Validaciones para crear pólizas"""
+        # Validar que la fecha de vencimiento sea después de la fecha de inicio
+        if data['fecha_inicio'] >= data['fecha_vencimiento']:
+            raise serializers.ValidationError({
+                'fecha_vencimiento': 'La fecha de vencimiento debe ser posterior a la fecha de inicio'
+            })
+        
+        # Validar que la suma asegurada sea positiva
+        if data['suma_asegurada'] <= 0:
+            raise serializers.ValidationError({
+                'suma_asegurada': 'La suma asegurada debe ser mayor a 0'
+            })
+        
+        return data
 
 class AgenteProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agente
-        # Excluimos 'usuario' porque ya lo tendremos del modelo Usuario
         exclude = ('usuario',)
 
-#Aireyu
+# En seguros/serializers.py - CORREGIR AgenteSerializer
 class AgenteSerializer(serializers.ModelSerializer):
     # Para mostrar campos del Usuario relacionado
     username = serializers.CharField(source='usuario.username', read_only=True)
     email = serializers.EmailField(source='usuario.email', read_only=True)
     first_name = serializers.CharField(source='usuario.first_name', read_only=True)
     last_name = serializers.CharField(source='usuario.last_name', read_only=True)
-    rol = serializers.CharField(source='usuario.rol', read_only=True) # Mostrar el rol
-class Meta:
+    rol = serializers.CharField(source='usuario.rol', read_only=True)
+    usuario_id = serializers.IntegerField(source='usuario.id', read_only=True)  # ← AÑADIR esto
+    
+    class Meta:
         model = Agente
-        # Incluye campos de Agente y los campos anidados de Usuario
-        fields = ['id', 'usuario', 'codigo_agente', 'fecha_contratacion', 
-                  'especialidad', 'comision', 'estado', 
-                  'username', 'email', 'first_name', 'last_name', 'rol']
-        read_only_fields = ['usuario'] # El usuario se asignará en la vista al crear
-    # (Opcional pero recomendado para CREAR/EDITAR)
-    # Necesitaríamos personalizar los métodos create/update para manejar
-    # la creación/actualización del objeto Agente asociado al Usuario.
-    # Por ahora, nos enfocaremos en LISTAR.
+        fields = [
+            'id', 'usuario_id', 'usuario', 'codigo_agente', 'fecha_contratacion',  # ← Incluir 'id' real del agente
+            'especialidad', 'comision', 'estado', 
+            'username', 'email', 'first_name', 'last_name', 'rol'
+        ]
+        read_only_fields = ['usuario']
 
 class UsuarioAgenteSerializer(serializers.ModelSerializer):
-    # Podrías añadir validación extra aquí si es necesario
     class Meta:
         model = Usuario
         fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'telefono', 'rol', 'identificacion', "is_active"]
-        extra_kwargs = {'password': {'write_only': True}} # No mostrar password al leer
+        extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        # Asegurarse de que el rol sea AGENTE y hashear la contraseña
         validated_data['rol'] = 'AGENTE' 
         user = Usuario.objects.create_user(**validated_data)
-        # Aquí podrías crear el perfil Agente asociado si es necesario
-        # Agente.objects.create(usuario=user, codigo_agente=..., fecha_contratacion=...) 
         return user
 
     def update(self, instance, validated_data):
-        # Manejar actualización de contraseña si se provee
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)
-        # Asegurarse de que el rol siga siendo AGENTE
         validated_data['rol'] = 'AGENTE'
         return super().update(instance, validated_data)
-
-
 
 class FacturaSerializer(serializers.ModelSerializer):
     poliza_info = PolizaSerializer(source='poliza', read_only=True)
@@ -120,10 +134,7 @@ class CrearPagoSerializer(serializers.ModelSerializer):
         model = Pago
         fields = ['factura', 'monto_pagado', 'metodo_pago', 'referencia_pago', 'descripcion']
 
-#aireyuclose
 
-
-# Serializers para nuevos modelos
 class SiniestroSerializer(serializers.ModelSerializer):
     poliza_info = PolizaSerializer(source='poliza', read_only=True)
     
@@ -143,6 +154,35 @@ class CrearSiniestroSerializer(serializers.ModelSerializer):
             'poliza', 'numero_siniestro', 'tipo_siniestro', 'fecha_siniestro',
             'descripcion', 'monto_reclamado', 'documentos_adjuntos'
         ]
+
+# En seguros/serializers.py - AÑADE este serializer:
+
+class ActualizarSiniestroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Siniestro
+        fields = [
+            'estado', 'monto_aprobado', 'resolucion', 'fecha_resolucion'
+        ]
+    
+    def validate(self, data):
+        """Validaciones para actualización de siniestros"""
+        instance = self.instance
+        estado = data.get('estado', instance.estado)
+        monto_aprobado = data.get('monto_aprobado')
+        
+        # Validar que si se aprueba, tenga monto aprobado
+        if estado == 'aprobado' and not monto_aprobado:
+            raise serializers.ValidationError({
+                'monto_aprobado': 'Debe especificar el monto aprobado cuando el estado es "aprobado"'
+            })
+        
+        # Validar que el monto aprobado no sea mayor al reclamado
+        if monto_aprobado and monto_aprobado > instance.monto_reclamado:
+            raise serializers.ValidationError({
+                'monto_aprobado': f'El monto aprobado no puede ser mayor al monto reclamado (${instance.monto_reclamado})'
+            })
+            
+        return data
 
 class NotaPolizaSerializer(serializers.ModelSerializer):
     poliza_info = PolizaSerializer(source='poliza', read_only=True)
@@ -165,24 +205,18 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
 
-        # --- Añade tus datos personalizados ---
-        # Añade todos los datos del usuario que necesites
         token['username'] = user.username
         token['first_name'] = user.first_name
         token['last_name'] = user.last_name
         token['email'] = user.email
         token['rol'] = user.rol
 
-
         return token
+
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
-
-    # En seguros/serializers.py - AÑADE ESTOS SERIALIZERS:
-
 class CrearClienteSerializer(serializers.ModelSerializer):
-    # Campos para crear el Usuario primero
     username = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(required=False, allow_blank=True)
@@ -198,7 +232,6 @@ class CrearClienteSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        # Extraer datos del usuario
         usuario_data = {
             'username': validated_data.pop('username'),
             'password': validated_data.pop('password'),
@@ -207,19 +240,14 @@ class CrearClienteSerializer(serializers.ModelSerializer):
             'email': validated_data.pop('email', ''),
             'telefono': validated_data.pop('telefono', ''),
             'rol': 'CLIENTE',
-           # 'es_cliente': True
         }
         
-        # Crear el usuario
         user = Usuario.objects.create_user(**usuario_data)
-        
-        # Crear el cliente asociado
         cliente = Cliente.objects.create(usuario=user, **validated_data)
         
         return cliente
 
 class EditarClienteSerializer(serializers.ModelSerializer):
-    # Campos para editar el Usuario
     first_name = serializers.CharField(source='usuario.first_name', required=False)
     last_name = serializers.CharField(source='usuario.last_name', required=False)
     email = serializers.EmailField(source='usuario.email', required=False)
@@ -233,15 +261,12 @@ class EditarClienteSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        # Extraer datos del usuario si existen
         usuario_data = validated_data.pop('usuario', {})
         
-        # Actualizar datos del usuario
         if usuario_data:
             usuario = instance.usuario
             for attr, value in usuario_data.items():
                 setattr(usuario, attr, value)
             usuario.save()
         
-        # Actualizar datos del cliente
         return super().update(instance, validated_data)
