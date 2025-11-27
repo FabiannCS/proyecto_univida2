@@ -52,6 +52,24 @@ def lista_polizas(request):
             return Response(PolizaSerializer(poliza).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def crear_poliza(request):
+    """Crea una nueva póliza (ruta separada)."""
+    serializer = CrearPolizaSerializer(data=request.data)
+    if serializer.is_valid():
+        # Generar número de póliza automáticamente si no se proporciona
+        if not request.data.get('numero_poliza'):
+            fecha = timezone.now()
+            random = str(fecha.microsecond)[-3:].zfill(3)
+            numero_poliza = f"POL-ACC-{fecha.year}{fecha.month:02d}{random}"
+            serializer.validated_data['numero_poliza'] = numero_poliza
+
+        poliza = serializer.save()
+        return Response(PolizaSerializer(poliza).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # API para Beneficiarios
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -459,11 +477,6 @@ def registrar_cliente_publico(request):
         serializer.save()  # Esto crea el Usuario y el Cliente
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if serializer.is_valid():
-            # Asignar fecha de reporte automáticamente
-            siniestro = serializer.save(fecha_reporte=timezone.now().date())
-            return Response(SiniestroSerializer(siniestro).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API para Notas de Póliza
 @api_view(['GET', 'POST'])
