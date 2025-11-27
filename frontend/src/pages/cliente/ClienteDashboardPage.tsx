@@ -1,13 +1,18 @@
 // en frontend/src/pages/cliente/ClienteDashboardPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Typography, Descriptions, Card, Tag, Table, Spin, Alert, Row, Col, Statistic, Button, Avatar, Divider } from 'antd';
-import { FileProtectOutlined, DollarCircleOutlined, CalendarOutlined, UserOutlined, PhoneOutlined, MailOutlined, DownloadOutlined, WarningOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Typography, Card, Descriptions, Tag, Table, Spin, Alert, Row, Col, Statistic, Button, Avatar, Divider, Empty, Space } from 'antd';
+import { 
+    FileProtectOutlined, DollarCircleOutlined, CalendarOutlined, UserOutlined, 
+    PhoneOutlined, MailOutlined, FileAddOutlined, EyeOutlined, 
+    InfoCircleOutlined, ArrowRightOutlined 
+} from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from "jwt-decode";
 
 const { Title, Text } = Typography;
 
-// --- Interfaces ---
+// ... (Tus interfaces se mantienen igual) ...
 interface Beneficiario {
   id: number;
   nombre_completo: string;
@@ -15,7 +20,6 @@ interface Beneficiario {
   porcentaje: string;
 }
 
-// Añadimos info del agente a la interfaz
 interface MiPoliza {
   id: number;
   numero_poliza: string;
@@ -25,177 +29,219 @@ interface MiPoliza {
   fecha_inicio: string;
   fecha_vencimiento: string;
   beneficiarios: Beneficiario[];
-  // (Asegúrate de que tu backend envíe esto, o se mostrará vacío)
   agente_info?: {
-    username: string;
     first_name: string;
     last_name: string;
-    email: string;
-    telefono?: string;
   };
 }
-
-// Datos simulados para pagos (hasta que tengas el backend de pagos)
-const pagosSimulados = [
-    { id: 1, fecha: '2025-01-15', monto: '1400.00', estado: 'Pagado', referencia: 'TRF-12345' },
-    { id: 2, fecha: '2024-01-15', monto: '1400.00', estado: 'Pagado', referencia: 'TRF-98765' },
-];
 
 const ClienteDashboardPage: React.FC = () => {
   const [poliza, setPoliza] = useState<MiPoliza | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const getToken = () => localStorage.getItem('accessToken');
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMiPoliza = async () => {
       setLoading(true);
       try {
         const token = getToken();
-        if (!token) {
-            setError('No autenticado');
-            setLoading(false);
-            return;
-        }
+        if (!token) { setLoading(false); return; }
         const headers = { Authorization: `Bearer ${token}` };
+
+        const decodedToken: any = jwtDecode(token);
+        const miUsername = decodedToken.username; 
         
         const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
         
-        if (response.data && response.data.length > 0) {
-            setPoliza(response.data[0]); 
+        const miPolizaEncontrada = response.data.find((p: any) => 
+            p.cliente_info?.usuario_info?.username === miUsername
+        );
+
+        if (miPolizaEncontrada) {
+            setPoliza(miPolizaEncontrada); 
         } else {
             setPoliza(null);
         }
-
-      } catch (err) {
-        console.error(err);
-        setError('No se pudo cargar la información de la póliza.');
-      } finally {
-        setLoading(false);
+      } catch (err) { 
+          console.error(err); 
+          setPoliza(null);
+      } finally { 
+          setLoading(false); 
       }
     };
-
     fetchMiPoliza();
   }, []);
 
-  if (loading) return <div style={{ display: 'grid', placeItems: 'center', height: '50vh' }}><Spin size="large" /></div>;
-  if (error) return <Alert message="Error" description={error} type="error" showIcon />;
-  if (!poliza) return <div style={{ textAlign: 'center', padding: '50px' }}><Title level={3}>No tienes pólizas activas</Title></div>;
+  if (loading) return (
+    <div style={{ display: 'grid', placeItems: 'center', height: '60vh' }}>
+        <Spin size="large" tip="Cargando tu información..." />
+    </div>
+  );
 
-  const beneficiarioColumns = [
-    { title: 'Nombre', dataIndex: 'nombre_completo', key: 'nombre' },
-    { title: 'Parentesco', dataIndex: 'parentesco', key: 'parentesco' },
-    { title: 'Porcentaje', dataIndex: 'porcentaje', key: 'porcentaje', render: (p: string) => `${p}%` },
-  ];
-
-  const pagosColumns = [
-    { title: 'Fecha', dataIndex: 'fecha', key: 'fecha' },
-    { title: 'Monto', dataIndex: 'monto', key: 'monto', render: (m: string) => `$${m}` },
-    { title: 'Referencia', dataIndex: 'referencia', key: 'referencia' },
-    { title: 'Estado', dataIndex: 'estado', key: 'estado', render: (e: string) => <Tag color="green">{e}</Tag> },
-  ];
+  // --- MENÚ RÁPIDO (Estilizado) ---
+  const MenuRapido = () => (
+    <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
+        <Col xs={24} sm={8}>
+            <Card 
+                hoverable 
+                style={{ textAlign: 'center', borderRadius: '12px', border: '1px solid #e8e8e8' }} 
+                onClick={() => navigate('/solicitar-poliza')}
+            >
+                <FileAddOutlined style={{ fontSize: '42px', color: '#1890ff', marginBottom: '16px' }} />
+                <Title level={4} style={{ margin: 0 }}>Solicitar Póliza</Title>
+                <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Cotiza un nuevo seguro a tu medida</Text>
+            </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+            <Card 
+                hoverable 
+                style={{ textAlign: 'center', borderRadius: '12px', border: '1px solid #e8e8e8' }} 
+                onClick={() => document.getElementById('detalle-poliza')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+                <EyeOutlined style={{ fontSize: '42px', color: '#52c41a', marginBottom: '16px' }} />
+                <Title level={4} style={{ margin: 0 }}>Ver Mi Póliza</Title>
+                <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Revisa coberturas y beneficios</Text>
+            </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+            <Card 
+                hoverable 
+                style={{ textAlign: 'center', borderRadius: '12px', border: '1px solid #e8e8e8' }}
+            >
+                <InfoCircleOutlined style={{ fontSize: '42px', color: '#faad14', marginBottom: '16px' }} />
+                <Title level={4} style={{ margin: 0 }}>Centro de Ayuda</Title>
+                <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Preguntas frecuentes y soporte</Text>
+            </Card>
+        </Col>
+    </Row>
+  );
 
   return (
-    <div>
-      {/* --- ENCABEZADO CON BOTÓN VOLVER --- */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        
-        {/* Agrupamos el botón y el título a la izquierda */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Button 
-                icon={<ArrowLeftOutlined />} 
-                onClick={() => navigate(-1)} // Vuelve atrás en el historial
-                shape="circle" // Opcional: Lo hace redondito, o quítalo para que sea cuadrado
-            />
-            <Title level={2} style={{ margin: 0 }}>Mi Portal</Title>
-        </div>
-
-        {/* Etiqueta de la póliza (a la derecha) */}
-        {poliza && (
-            <Tag color="blue" style={{ fontSize: '14px', padding: '5px 10px' }}>
-                Póliza #{poliza.numero_poliza}
-            </Tag>
-        )}
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Encabezado */}
+      <div style={{ marginBottom: 40, textAlign: 'center' }}>
+        <Title level={2} style={{ margin: 0, fontFamily: "'Michroma', sans-serif" }}>Bienvenido a tu Portal</Title>
+        <Text type="secondary" style={{ fontSize: '16px' }}>Gestiona tus seguros de forma rápida y segura</Text>
       </div>
+      
+      <MenuRapido />
 
-      <Row gutter={[24, 24]}>
-        
-        {/* --- COLUMNA IZQUIERDA (Información Principal) --- */}
-        <Col xs={24} lg={16}>
-            
-            {/* 1. Estadísticas Rápidas */}
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-                <Col span={8}>
-                <Card size="small">
-                    <Statistic title="Suma Asegurada" value={poliza.suma_asegurada} prefix={<DollarCircleOutlined />} precision={2} />
-                </Card>
+      <Divider orientation="left" style={{ borderColor: '#d9d9d9' }}>Estado de tu Cobertura</Divider>
+
+      <div id="detalle-poliza">
+        {poliza ? (
+            <Row gutter={[24, 24]}>
+                {/* COLUMNA IZQUIERDA: Detalles */}
+                <Col xs={24} lg={16}>
+                    
+                    {/* Estadísticas en Tarjetas */}
+                    <Row gutter={16} style={{ marginBottom: 24 }}>
+                        <Col span={8}>
+                            <Card size="small" bordered={false} style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                                <Statistic 
+                                    title="Estado Actual" 
+                                    value={poliza.estado.toUpperCase()} 
+                                    valueStyle={{ color: '#3f8600', fontWeight: 'bold' }} 
+                                    prefix={<FileProtectOutlined />} 
+                                />
+                            </Card>
+                        </Col>
+                        <Col span={8}>
+                            <Card size="small" bordered={false} style={{ background: '#e6f7ff', border: '1px solid #91d5ff' }}>
+                                <Statistic 
+                                    title="Suma Asegurada" 
+                                    value={parseFloat(poliza.suma_asegurada)} 
+                                    prefix={<DollarCircleOutlined />} 
+                                    precision={2} 
+                                    valueStyle={{ color: '#096dd9' }}
+                                />
+                            </Card>
+                        </Col>
+                        <Col span={8}>
+                            <Card size="small" bordered={false} style={{ background: '#fff7e6', border: '1px solid #ffd591' }}>
+                                <Statistic 
+                                    title="Vencimiento" 
+                                    value={poliza.fecha_vencimiento} 
+                                    prefix={<CalendarOutlined />} 
+                                    valueStyle={{ color: '#d46b08', fontSize: '1rem' }}
+                                />
+                            </Card>
+                        </Col>
+                    </Row>
+
+                    {/* Detalles de Póliza */}
+                    <Card title={`Póliza #${poliza.numero_poliza}`} extra={<Tag color="blue">VIDA</Tag>} style={{ marginBottom: 24, borderRadius: '8px' }}>
+                        <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}>
+                            <Descriptions.Item label="Prima Anual">${parseFloat(poliza.prima_anual).toLocaleString()}</Descriptions.Item>
+                            <Descriptions.Item label="Fecha de Inicio">{poliza.fecha_inicio}</Descriptions.Item>
+                            <Descriptions.Item label="Fecha de Fin">{poliza.fecha_vencimiento}</Descriptions.Item>
+                            <Descriptions.Item label="Tipo">Vida Individual</Descriptions.Item>
+                        </Descriptions>
+                    </Card>
+
+                    {/* Beneficiarios */}
+                    <Card title="Mis Beneficiarios" style={{ borderRadius: '8px' }}>
+                        <Table 
+                            dataSource={poliza.beneficiarios} 
+                            columns={[
+                                { title: 'Nombre', dataIndex: 'nombre_completo', key: 'nombre' },
+                                { title: 'Parentesco', dataIndex: 'parentesco', key: 'parentesco' },
+                                { title: '%', dataIndex: 'porcentaje', key: 'porcentaje', render: (p: string) => <Tag color="cyan">{p}%</Tag> },
+                            ]} 
+                            rowKey="id" 
+                            pagination={false} 
+                            size="middle"
+                            bordered
+                        />
+                    </Card>
                 </Col>
-                <Col span={8}>
-                <Card size="small">
-                    <Statistic 
-                        title="Estado" 
-                        value={poliza.estado.toUpperCase()} 
-                        valueStyle={{ color: poliza.estado === 'activa' ? '#3f8600' : '#cf1322', fontSize: '16px' }} 
-                    />
-                </Card>
-                </Col>
-                <Col span={8}>
-                <Card size="small">
-                    <Statistic title="Vence el" value={poliza.fecha_vencimiento} prefix={<CalendarOutlined />} valueStyle={{ fontSize: '16px' }} />
-                </Card>
+
+                {/* COLUMNA DERECHA: Agente */}
+                <Col xs={24} lg={8}>
+                    <Card title="Mi Agente" style={{ borderRadius: '8px', textAlign: 'center' }} hoverable>
+                        <div style={{ marginBottom: 20 }}>
+                            <Avatar size={80} icon={<UserOutlined />} style={{ backgroundColor: '#87d068', marginBottom: 16 }} />
+                            <Title level={4} style={{ margin: 0 }}>
+                                {poliza.agente_info ? `${poliza.agente_info.first_name} ${poliza.agente_info.last_name}` : 'Agente General'}
+                            </Title>
+                            <Text type="secondary">Tu asesor personal</Text>
+                        </div>
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                            <Button block icon={<PhoneOutlined />} size="large">Llamar Ahora</Button>
+                            <Button block icon={<MailOutlined />} size="large">Enviar Mensaje</Button>
+                        </Space>
+                    </Card>
+                    
+                    {/* Banner de Promo (Opcional) */}
+                    <Card style={{ marginTop: 24, background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)', border: 'none', color: 'white' }}>
+                        <Title level={5} style={{ color: 'white' }}>¿Necesitas más cobertura?</Title>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)' }}>Consulta nuestras opciones para ampliar tu seguro.</Text>
+                        <Button ghost style={{ marginTop: 16 }} icon={<ArrowRightOutlined />}>Ver Opciones</Button>
+                    </Card>
                 </Col>
             </Row>
-
-            {/* 2. Detalles de la Póliza */}
-            <Card title="Detalles de Cobertura" style={{ marginBottom: 24 }}>
-                <Descriptions bordered column={1} size="small">
-                <Descriptions.Item label="Número de Póliza">{poliza.numero_poliza}</Descriptions.Item>
-                <Descriptions.Item label="Prima Anual">${poliza.prima_anual}</Descriptions.Item>
-                <Descriptions.Item label="Vigencia">{poliza.fecha_inicio} al {poliza.fecha_vencimiento}</Descriptions.Item>
-                </Descriptions>
+        ) : (
+            // --- SI NO TIENE PÓLIZA ---
+            <Card style={{ textAlign: 'center', padding: '60px 20px', borderRadius: '16px', background: '#fafafa' }}>
+                <Empty
+                    image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
+                    imageStyle={{ height: 160 }}
+                    description={
+                        <span style={{ fontSize: '16px', color: '#555' }}>
+                            Aún no tienes una póliza activa. <br/>
+                            ¡Es el momento perfecto para asegurar tu tranquilidad!
+                        </span>
+                    }
+                >
+                    <Button type="primary" size="large" shape="round" icon={<FileAddOutlined />} onClick={() => navigate('/solicitar-poliza')} style={{ marginTop: 16, height: '48px', padding: '0 32px', fontSize: '16px' }}>
+                        Solicitar Nueva Póliza Ahora
+                    </Button>
+                </Empty>
             </Card>
-
-            {/* 3. Historial de Pagos (Nuevo) */}
-            <Card title="Historial de Pagos" style={{ marginBottom: 24 }}>
-                <Table dataSource={pagosSimulados} columns={pagosColumns} rowKey="id" pagination={false} size="small" />
-            </Card>
-
-            {/* 4. Beneficiarios */}
-            <Card title="Mis Beneficiarios">
-                <Table dataSource={poliza.beneficiarios} columns={beneficiarioColumns} rowKey="id" pagination={false} size="small" />
-            </Card>
-        </Col>
-
-        {/* --- COLUMNA DERECHA (Agente y Acciones) --- */}
-        <Col xs={24} lg={8}>
-            
-            {/* 5. Tarjeta "Mi Agente" (Nuevo) */}
-            <Card title="Mi Agente Asignado" style={{ marginBottom: 24 }}>
-                <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <Avatar size={64} icon={<UserOutlined />} style={{ backgroundColor: '#87d068', marginBottom: 8 }} />
-                    {poliza.agente_info ? (
-                        <>
-                            <Title level={4} style={{ margin: 0 }}>{poliza.agente_info.first_name} {poliza.agente_info.last_name}</Title>
-                            <Text type="secondary">Agente de Seguros</Text>
-                        </>
-                    ) : (
-                        <>
-                            <Title level={4} style={{ margin: 0 }}>Agente General</Title>
-                            <Text type="secondary">Soporte Univida</Text>
-                        </>
-                    )}
-                </div>
-                <Divider />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <Button block icon={<PhoneOutlined />}>Enviar Mensaje</Button>
-                    <Button block icon={<MailOutlined />}>Enviar Correo</Button>
-                </div>
-            </Card>
-
-        </Col>
-      </Row>
+        )}
+      </div>
     </div>
   );
 };

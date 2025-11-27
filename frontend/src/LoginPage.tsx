@@ -83,13 +83,13 @@ function LoginPage() {
                 {/* --- Formulario de Login Centrado --- */}
                 <div style={{
                     padding: '40px',
-                    borderRadius: '8px',
+                    borderRadius: '20px',
                     background: '#fff',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     width: '100%',
                     maxWidth: '420px', // Ancho del formulario
                     margin: '0 auto',
-                    minHeight: '400px', // Altura que te gustó
+                    minHeight: '450px', // Altura que te gustó
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center'
