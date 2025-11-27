@@ -11,18 +11,19 @@ urlpatterns = [
     path('clientes/<int:cliente_id>/editar/', views.editar_cliente, name='editar_cliente'),
     path('clientes/<int:cliente_id>/eliminar/', views.eliminar_cliente, name='eliminar_cliente'),
     path('clientes/<int:cliente_id>/reactivar/', views.reactivar_cliente, name='reactivar_cliente'),
-    
-    # APIs para Pólizas - CORREGIDO
-    path('polizas/', views.lista_polizas, name='lista_polizas'),  # ← Esta maneja GET y POST
+
+    # APIs para Pólizas
+    path('polizas/', views.lista_polizas, name='lista_polizas'),
+    path('polizas/crear/', views.crear_poliza, name='crear_poliza'),
     path('polizas/<int:poliza_id>/', views.detalle_poliza, name='detalle_poliza'),
     path('polizas/<int:poliza_id>/activar/', views.activar_poliza, name='activar_poliza'),
     path('polizas/<int:poliza_id>/cancelar/', views.cancelar_poliza, name='cancelar_poliza'),
-    
+
     # APIs para Beneficiarios
     path('beneficiarios/', views.lista_beneficiarios, name='lista_beneficiarios'),
 
     # APIs para Agentes
-    path('agentes/', views.lista_agentes, name='lista_agentes'), 
+    path('agentes/', views.lista_agentes, name='lista_agentes'),
     path('agentes/crear/', views.crear_agente, name='crear_agente'),
     path('agentes/<int:agente_id>/', views.detalle_agente, name='detalle_agente'),
     path('agentes/<int:agente_id>/editar/', views.editar_agente, name='editar_agente'),
@@ -32,7 +33,7 @@ urlpatterns = [
     # APIs para Facturas y Pagos
     path('facturas/', views.lista_facturas, name='lista_facturas'),
     path('pagos/', views.lista_pagos, name='lista_pagos'),
-    
+
     # APIs para Siniestros
     path('siniestros/', views.lista_siniestros, name='lista_siniestros'),
     path('siniestros/<int:siniestro_id>/', views.detalle_siniestro, name='detalle_siniestro'),
@@ -42,4 +43,7 @@ urlpatterns = [
     # APIs para Notas
     path('notas-poliza/', views.lista_notas_poliza, name='lista_notas_poliza'),
     path('notas-poliza/<int:nota_id>/', views.detalle_nota_poliza, name='detalle_nota_poliza'),
+
+    # Rutas públicas / registro
+    path('registro/', views.registrar_cliente_publico, name='registro_publico'),
 ]
