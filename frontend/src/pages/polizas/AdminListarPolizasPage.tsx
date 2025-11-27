@@ -1,7 +1,7 @@
-// en frontend/src/pages/polizas/AdminListarPolizasPage.tsx
+// en frontend/src/pages/polizas/AdminListarPolizasPage.tsx - VERSIÓN ACTUALIZADA
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Table, Button, message, Space, Tag, Popconfirm } from 'antd';
-import { PlusOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Layout, Typography, Table, Button, message, Space, Tag, Popconfirm, Tooltip } from 'antd';
+import { PlusOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { authService } from '../../services/authService';
@@ -20,6 +20,7 @@ interface Poliza {
   };
   estado: string;
   suma_asegurada: string;
+  fecha_vencimiento: string;
 }
 
 const AdminListarPolizasPage: React.FC = () => {
@@ -90,6 +91,11 @@ const AdminListarPolizasPage: React.FC = () => {
     }
   };
 
+  // --- Función para reportar siniestro desde una póliza ---
+  const reportarSiniestro = (polizaId: number) => {
+    navigate(`/admin-polizas/${polizaId}/reportar-siniestro`);
+  };
+
   // Carga las pólizas una vez al montar la página
   useEffect(() => {
     fetchPolizas();
@@ -144,31 +150,56 @@ const AdminListarPolizasPage: React.FC = () => {
       render: (monto: string) => `$${parseFloat(monto).toLocaleString('es-ES')}`
     },
     {
+      title: 'Vencimiento',
+      dataIndex: 'fecha_vencimiento',
+      key: 'fecha_vencimiento',
+      render: (fecha: string) => new Date(fecha).toLocaleDateString('es-ES')
+    },
+    {
       title: 'Acciones',
       key: 'acciones',
       render: (_: any, record: Poliza) => (
         <Space size="middle">
           {/* Botón Ver Detalles - Siempre visible */}
-          <Button 
-            icon={<EyeOutlined />} 
-            onClick={() => navigate(`/admin-polizas/${record.id}`)}
-            size="small"
-          >
-            Ver
-          </Button>
+          <Tooltip title="Ver detalles de la póliza">
+            <Button 
+              icon={<EyeOutlined />} 
+              onClick={() => navigate(`/admin-polizas/${record.id}`)}
+              size="small"
+            >
+              Ver
+            </Button>
+          </Tooltip>
+
+          {/* Botón Reportar Siniestro - Solo para pólizas activas */}
+          {record.estado === 'activa' && (
+            <Tooltip title="Reportar siniestro para esta póliza">
+              <Button 
+                type="primary" 
+                danger
+                icon={<ExclamationCircleOutlined />}
+                onClick={() => reportarSiniestro(record.id)}
+                size="small"
+              >
+                Reportar Siniestro
+              </Button>
+            </Tooltip>
+          )}
 
           {/* Botones específicos por estado */}
           {record.estado === 'cotizacion' && (
             <>
-              <Button 
-                type="primary" 
-                icon={<CheckCircleOutlined />}
-                onClick={() => activarPoliza(record.id)}
-                size="small"
-                style={{ background: '#52c41a', borderColor: '#52c41a' }}
-              >
-                Activar
-              </Button>
+              <Tooltip title="Activar póliza">
+                <Button 
+                  type="primary" 
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => activarPoliza(record.id)}
+                  size="small"
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                >
+                  Activar
+                </Button>
+              </Tooltip>
               
               <Popconfirm
                 title="¿Estás seguro de cancelar esta póliza?"
@@ -178,13 +209,15 @@ const AdminListarPolizasPage: React.FC = () => {
                 cancelText="No"
                 okType="danger"
               >
-                <Button 
-                  danger 
-                  icon={<CloseCircleOutlined />}
-                  size="small"
-                >
-                  Cancelar
-                </Button>
+                <Tooltip title="Cancelar póliza">
+                  <Button 
+                    danger 
+                    icon={<CloseCircleOutlined />}
+                    size="small"
+                  >
+                    Cancelar
+                  </Button>
+                </Tooltip>
               </Popconfirm>
             </>
           )}
@@ -196,13 +229,15 @@ const AdminListarPolizasPage: React.FC = () => {
           )}
 
           {record.estado === 'vencida' && (
-            <Button 
-              type="dashed" 
-              size="small"
-              onClick={() => message.info('Funcionalidad de renovación en desarrollo')}
-            >
-              Renovar
-            </Button>
+            <Tooltip title="Renovar póliza vencida">
+              <Button 
+                type="dashed" 
+                size="small"
+                onClick={() => message.info('Funcionalidad de renovación en desarrollo')}
+              >
+                Renovar
+              </Button>
+            </Tooltip>
           )}
 
           {record.estado === 'cancelada' && (
@@ -223,14 +258,25 @@ const AdminListarPolizasPage: React.FC = () => {
           Gestión de Pólizas
         </Title>
         
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => navigate('/admin-polizas/crear')}
-          style={{ marginBottom: 16, fontFamily: 'Michroma, sans-serif'}}
-        >
-          Crear Nueva Póliza
-        </Button>
+        <Space style={{ marginBottom: 16 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate('/admin-polizas/crear')}
+            style={{ fontFamily: 'Michroma, sans-serif'}}
+          >
+            Crear Nueva Póliza
+          </Button>
+          
+          <Button
+            type="default"
+            icon={<ExclamationCircleOutlined />}
+            onClick={() => navigate('/admin-siniestros/reportar')}
+            style={{ fontFamily: 'Michroma, sans-serif'}}
+          >
+            Reportar Siniestro General
+          </Button>
+        </Space>
         
         <Table
           columns={columns}
