@@ -1,3 +1,4 @@
+# en seguros/models.py - VERSIÓN CORREGIDA
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -14,7 +15,7 @@ class Usuario(AbstractUser):
     rol = models.CharField(
         max_length=10, 
         choices=ROL_CHOICES, 
-        default='CLIENTE' # Por defecto, Cliente
+        default='CLIENTE'
     )
 
     class Meta:
@@ -34,7 +35,7 @@ class Cliente(models.Model):
         return f"{self.usuario.get_full_name()}"
     
     class Meta:
-        db_table = 'univida_cliente'  # Nombre diferente
+        db_table = 'univida_cliente'
 
 class Poliza(models.Model):
     ESTADO_CHOICES = [
@@ -42,31 +43,38 @@ class Poliza(models.Model):
         ('activa', 'Activa'),
         ('inactiva', 'Inactiva'),
         ('vencida', 'Vencida'),
+        ('cancelada', 'Cancelada'),  # ← AÑADIDO
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-    agente = models.ForeignKey(  # ← CAMPO ACTUALIZADO
+    agente = models.ForeignKey(
         'Agente', 
-        on_delete=models.SET_NULL,  # ← Cambiado de CASCADE a SET_NULL
-        null=True,                  # ← Agregado
-        blank=True,                 # ← Agregado
-        related_name='polizas'      # ← Agregado
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='polizas'
     )
     numero_poliza = models.CharField(max_length=50, unique=True)
     suma_asegurada = models.DecimalField(max_digits=12, decimal_places=2)
     prima_anual = models.DecimalField(max_digits=10, decimal_places=2)
+    prima_mensual = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # ← ¡AÑADIDO ESTE CAMPO!
     fecha_inicio = models.DateField()
     fecha_vencimiento = models.DateField()
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='cotizacion')
-    cobertura = models.TextField(blank=True, null=True)  # ← Agregado campo cobertura
+    cobertura = models.TextField(blank=True, null=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"Póliza {self.numero_poliza} - {self.cliente}"
     
+    def save(self, *args, **kwargs):
+        # Calcular prima mensual automáticamente si no se especifica
+        if self.prima_anual and not self.prima_mensual:
+            self.prima_mensual = self.prima_anual / 12
+        super().save(*args, **kwargs)
+    
     class Meta:
         db_table = 'univida_poliza'
-
 
 # Aireyu
 class Factura(models.Model):
@@ -123,8 +131,6 @@ class Pago(models.Model):
         db_table = 'univida_pago'
         verbose_name = 'Pago'
         verbose_name_plural = 'Pagos'
-#Aireyuclose
-
 
 class Beneficiario(models.Model):
     poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='beneficiarios')
@@ -137,8 +143,7 @@ class Beneficiario(models.Model):
         return f"{self.nombre_completo} ({self.parentesco})"
     
     class Meta:
-        db_table = 'univida_beneficiario'  # Nombre diferente
-
+        db_table = 'univida_beneficiario'
 
 class Agente(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='agente')
@@ -166,7 +171,6 @@ class Agente(models.Model):
         verbose_name = 'Agente'
         verbose_name_plural = 'Agentes'
 
-
 class Siniestro(models.Model):
     ESTADO_SINIESTRO = [
         ('reportado', 'Reportado'),
@@ -179,7 +183,10 @@ class Siniestro(models.Model):
     TIPO_SINIESTRO = [
         ('muerte', 'Muerte'),
         ('invalidez', 'Invalidez Total'),
-        ('enfermedad', 'Enfermedad Grave'),
+        ('invalidez_parcial', 'Invalidez Parcial'),
+        ('gastos_medicos', 'Gastos Médicos'),
+        ('hospitalizacion', 'Hospitalización'),
+        ('incapacidad_temporal', 'Incapacidad Temporal'),
         ('otros', 'Otros'),
     ]
     
@@ -192,7 +199,7 @@ class Siniestro(models.Model):
     monto_reclamado = models.DecimalField(max_digits=12, decimal_places=2)
     monto_aprobado = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_SINIESTRO, default='reportado')
-    documentos_adjuntos = models.TextField(blank=True, null=True)  # Rutas de archivos
+    documentos_adjuntos = models.TextField(blank=True, null=True)
     resolucion = models.TextField(blank=True, null=True)
     fecha_resolucion = models.DateField(null=True, blank=True)
     

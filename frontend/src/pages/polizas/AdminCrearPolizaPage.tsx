@@ -1,4 +1,4 @@
-// en frontend/src/pages/polizas/AdminCrearPolizaPage.tsx
+// en frontend/src/pages/polizas/AdminCrearPolizaPage.tsx - VERSIÓN CORREGIDA
 import React, { useState, useEffect } from 'react';
 import { 
   Layout, Typography, Form, Input, Button, message, Row, Col, 
@@ -30,7 +30,8 @@ interface Cliente {
 }
 
 interface Agente {
-  id: number;
+  id: number;           // ← Este es el ID REAL del agente (40)
+  usuario_id: number;   // ← Este es el ID del usuario (116)
   username: string;
   first_name: string;
   last_name: string;
@@ -67,7 +68,7 @@ const AdminCrearPolizaPage: React.FC = () => {
 
       const [clientesRes, agentesRes] = await Promise.all([
         axios.get('http://127.0.0.1:8000/api/clientes/', { headers }),
-        axios.get('http://127.0.1:8000/api/agentes/', { headers })
+        axios.get('http://127.0.0.1:8000/api/agentes/', { headers }) // ← Corregí el puerto
       ]);
 
       setClientes(clientesRes.data);
@@ -78,25 +79,26 @@ const AdminCrearPolizaPage: React.FC = () => {
     }
   };
 
-  // CORRIGE la función calcularPrimas en AdminCrearPolizaPage.tsx
-const calcularPrimas = (value: number | null | string) => {
-  // Convertir a número y manejar valores nulos/vacíos
-  const valorNumerico = value ? Number(value) : 0;
-  
-  setSumaAsegurada(valorNumerico);
-  
-  const primaAnualCalculada = valorNumerico * TASA_PRIMA;
-  const primaMensualCalculada = primaAnualCalculada / 12;
-  
-  setPrimaAnual(primaAnualCalculada);
-  setPrimaMensual(primaMensualCalculada);
+  // En AdminCrearPolizaPage.tsx - ACTUALIZAR calcularPrimas
+  const calcularPrimas = (value: number | null | string) => {
+    // Convertir a número y manejar valores nulos/vacíos
+    const valorNumerico = value ? Number(value) : 0;
+    
+    setSumaAsegurada(valorNumerico);
+    
+    const primaAnualCalculada = valorNumerico * TASA_PRIMA;
+    const primaMensualCalculada = primaAnualCalculada / 12;
+    
+    // Redondear a 2 decimales
+    setPrimaAnual(parseFloat(primaAnualCalculada.toFixed(2)));
+    setPrimaMensual(parseFloat(primaMensualCalculada.toFixed(2)));
 
-  // Actualizar valores en el formulario
-  form.setFieldsValue({
-    prima_anual: primaAnualCalculada > 0 ? primaAnualCalculada.toFixed(2) : '',
-    prima_mensual: primaMensualCalculada > 0 ? primaMensualCalculada.toFixed(2) : ''
-  });
-};
+    // Actualizar valores en el formulario
+    form.setFieldsValue({
+      prima_anual: primaAnualCalculada > 0 ? primaAnualCalculada.toFixed(2) : '',
+      prima_mensual: primaMensualCalculada > 0 ? primaMensualCalculada.toFixed(2) : ''
+    });
+  };
 
   const generarNumeroPoliza = () => {
     const fecha = new Date();
@@ -104,55 +106,64 @@ const calcularPrimas = (value: number | null | string) => {
     return `POL-ACC-${fecha.getFullYear()}${(fecha.getMonth() + 1).toString().padStart(2, '0')}${random}`;
   };
 
-  const handleFormSubmit = async (values: any) => {
-    setLoading(true);
-    try {
-      const token = authService.getToken();
-      if (!token) {
-        message.error('No estás autenticado.');
-        setLoading(false);
-        return;
-      }
-
-      const headers = { Authorization: `Bearer ${token}` };
-
-      // Preparar datos para el backend
-      const polizaData = {
-        cliente: values.cliente_id,
-        agente: values.agente_id,
-        numero_poliza: values.numero_poliza || generarNumeroPoliza(),
-        suma_asegurada: values.suma_asegurada,
-        prima_anual: values.prima_anual,
-        prima_mensual: values.prima_mensual,
-        fecha_inicio: values.fecha_inicio.format('YYYY-MM-DD'),
-        fecha_vencimiento: values.fecha_vencimiento.format('YYYY-MM-DD'),
-        cobertura: values.cobertura || 'Seguro de Accidentes Personales - Cobertura básica por muerte e invalidez permanente total o parcial resultante de accidente.',
-        exclusiones: values.exclusiones || 'Suicidio, lesiones autoinfligidas, participación en actos ilícitos, guerra, actividades deportivas profesionales de alto riesgo.',
-        estado: 'activa'
-      };
-
-      console.log('Enviando datos de póliza:', polizaData);
-
-      await axios.post('http://127.0.0.1:8000/api/polizas/', polizaData, { headers });
-      
-      message.success('Póliza creada exitosamente.');
-      form.resetFields();
-      
-      setTimeout(() => {
-        navigate('/admin-polizas');
-      }, 1500);
-
-    } catch (error: any) {
-      console.error('Error al crear póliza:', error);
-      if (error.response?.data) {
-        message.error(`Error: ${JSON.stringify(error.response.data)}`);
-      } else {
-        message.error('Error al crear la póliza.');
-      }
-    } finally {
+// En AdminCrearPolizaPage.tsx - CORREGIR el handleFormSubmit
+const handleFormSubmit = async (values: any) => {
+  setLoading(true);
+  try {
+    const token = authService.getToken();
+    if (!token) {
+      message.error('No estás autenticado.');
       setLoading(false);
+      return;
     }
-  };
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    // Preparar datos para el backend - CORREGIDO
+    const polizaData = {
+      cliente: values.cliente_id,
+      agente: values.agente_id || null, // ← Permitir null
+      numero_poliza: values.numero_poliza || generarNumeroPoliza(),
+      suma_asegurada: parseFloat(values.suma_asegurada),
+      prima_anual: parseFloat(primaAnual.toFixed(2)), // ← Redondear a 2 decimales
+      prima_mensual: parseFloat(primaMensual.toFixed(2)), // ← Redondear a 2 decimales
+      fecha_inicio: values.fecha_inicio.format('YYYY-MM-DD'),
+      fecha_vencimiento: values.fecha_vencimiento.format('YYYY-MM-DD'),
+      cobertura: values.cobertura || 'Seguro de Accidentes Personales - Cobertura básica por muerte e invalidez permanente total o parcial resultante de accidente.',
+      estado: 'activa'
+    };
+
+    console.log('Enviando datos de póliza CORREGIDOS:', polizaData);
+
+    const response = await axios.post('http://127.0.0.1:8000/api/polizas/', polizaData, { headers });
+    
+    message.success('Póliza creada exitosamente.');
+    form.resetFields();
+    
+    setTimeout(() => {
+      navigate('/admin-polizas');
+    }, 1500);
+
+  } catch (error: any) {
+    console.error('Error al crear póliza:', error);
+    console.error('Respuesta del error:', error.response?.data);
+    if (error.response?.data) {
+      // Mostrar errores específicos
+      const errors = error.response.data;
+      if (errors.agente) {
+        message.error(`Error en agente: ${errors.agente[0]}`);
+      } else if (errors.prima_anual) {
+        message.error(`Error en prima anual: ${errors.prima_anual[0]}`);
+      } else {
+        message.error(`Error: ${JSON.stringify(errors)}`);
+      }
+    } else {
+      message.error('Error al crear la póliza.');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Layout>
@@ -179,8 +190,8 @@ const calcularPrimas = (value: number | null | string) => {
                 layout="vertical"
                 onFinish={handleFormSubmit}
                 initialValues={{
-                  cobertura: 'Seguro de Accidentes Personales - Cobertura básica por muerte e invalidez permanente total o parcial resultante de accidente.',
-                  exclusiones: 'Suicidio, lesiones autoinfligidas, participación en actos ilícitos, guerra, actividades deportivas profesionales de alto riesgo.'
+                  cobertura: 'Seguro de Accidentes Personales - Cobertura básica por muerte e invalidez permanente total o parcial resultante de accidente.'
+                  // ← QUITAMOS exclusiones del initialValues
                 }}
               >
                 <Row gutter={16}>
@@ -215,10 +226,11 @@ const calcularPrimas = (value: number | null | string) => {
                         showSearch
                         optionFilterProp="children"
                         suffixIcon={<TeamOutlined />}
+                        allowClear
                       >
                         {agentes.map(agente => (
                           <Option key={agente.id} value={agente.id}>
-                            {agente.first_name} {agente.last_name} ({agente.codigo_agente || agente.username})
+                            {agente.first_name} {agente.last_name} ({agente.codigo_agente || agente.username}) - ID: {agente.id}
                           </Option>
                         ))}
                       </Select>
@@ -250,7 +262,7 @@ const calcularPrimas = (value: number | null | string) => {
                         formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                         parser={value => value?.replace(/\$\s?|(,*)/g, '') as any}
                         onChange={(value) => calcularPrimas(value)}
-                        step={1000} // Añadir step para mejor UX
+                        step={1000}
                       />
                     </Item>
                   </Col>
@@ -333,12 +345,7 @@ const calcularPrimas = (value: number | null | string) => {
                   <TextArea rows={3} placeholder="Descripción de lo que cubre el seguro..." />
                 </Item>
 
-                <Item
-                  name="exclusiones"
-                  label="Exclusiones"
-                >
-                  <TextArea rows={3} placeholder="Descripción de lo que NO cubre el seguro..." />
-                </Item>
+                {/* ← QUITAMOS el campo de exclusiones */}
 
                 <Item style={{ textAlign: 'center', marginTop: '24px' }}>
                   <Button 
