@@ -23,7 +23,7 @@ import { authService } from '../services/authService';
 import { useSessionTimeout } from '../hooks/useSessionTimeout';
 import type { MenuProps } from 'antd';
 import { Space, Input, Badge, Tooltip } from 'antd';
-
+import { jwtDecode } from "jwt-decode";
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
@@ -37,16 +37,26 @@ const AdminLayout: React.FC = () => {
   useSessionTimeout();
 
   useEffect(() => {
-    const userInfo = authService.getUserInfo();
-    if (userInfo) {
-      setUserName(authService.getFullName());
-      setUserRole(userInfo.rol);
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        try {
+            const decoded: any = jwtDecode(token);
+            // Si tiene nombre y apellido, úsalos. Si no, usa el username.
+            if (decoded.first_name || decoded.last_name) {
+                setUserName(`${decoded.first_name} ${decoded.last_name}`);
+            } else {
+                setUserName(decoded.username);
+            }
+            setUserRole(decoded.rol);
+        } catch (e) {
+            console.error("Error al leer token", e);
+        }
     }
   }, []);
 
   const handleLogout = () => {
     authService.logout();
-    navigate('/');
+    navigate('/login');
   };
 
   const userMenuItems: MenuProps['items'] = [

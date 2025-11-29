@@ -1,19 +1,25 @@
 // en frontend/src/layouts/AgenteLayout.tsx
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Typography, Avatar, Dropdown } from 'antd';
+import { Layout, Menu, Button, Typography, Avatar, Dropdown, Breadcrumb } from 'antd';
 import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
   DashboardOutlined,
   UsergroupAddOutlined,
   FileDoneOutlined,
   LogoutOutlined,
   UserSwitchOutlined,
+  HomeOutlined,
   MoreOutlined,
-  UserOutlined,
+  SearchOutlined,
+  BellOutlined,
+  UserOutlined
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useSessionTimeout } from '../hooks/useSessionTimeout';
 import type { MenuProps } from 'antd';
+import { Space, Input, Badge, Tooltip } from 'antd';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -35,9 +41,10 @@ const AgenteLayout: React.FC = () => {
 
   const handleLogout = () => {
     authService.logout();
-    navigate('/');
+    navigate('/login');
   };
 
+  // --- MENÚ DE PERFIL ---
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
@@ -55,7 +62,7 @@ const AgenteLayout: React.FC = () => {
     },
   ];
 
-  // --- MENÚ ESPECÍFICO PARA AGENTES ---
+  // --- MENÚ LATERAL (Específico de Agente) ---
   const menuItems = [
     {
       key: '1',
@@ -83,54 +90,89 @@ const AgenteLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* SIDER (Barra Lateral) */}
+      {/* SIDER (Barra Lateral - Color Verde Oscuro para diferenciar) */}
       <Sider 
+        trigger={null} 
         collapsible 
         collapsed={collapsed} 
-        onCollapse={(value) => setCollapsed(value)}
         width={260}
         style={{
-          background: '#001529', // Color azul oscuro distintivo para Agentes
+          background: '#002329', // Un tono verdoso oscuro para diferenciar del Admin
           height: '100vh',
           position: 'fixed',
           left: 0,
           top: 0,
           bottom: 0,
           zIndex: 100,
-          display: 'flex',
-          flexDirection: 'column', 
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {/* Logo */}
+            
+            {/* 1. LOGO */}
             <div style={{ padding: '16px', textAlign: 'center', flexShrink: 0 }}>
-                <Title level={4} style={{ color: 'white', margin: 0, fontFamily: "'Michroma', sans-serif", fontSize: collapsed ? '1rem' : '1.1rem' }}>
-                    {collapsed ? 'AG' : 'Portal Agente'}
+                <Title level={4} style={{ 
+                fontWeight: 'bold', 
+                margin: 0,  
+                color: 'white', 
+                fontFamily: "'Michroma', sans-serif",
+                fontSize: collapsed ? '1rem' : '1.1rem',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+                }}>
+                {collapsed ? 'AG' : 'Portal Agente'}
                 </Title>
             </div>
 
-            {/* Menú */}
+            {/* 2. MENÚ */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
                 <Menu 
-                    theme="dark" 
-                    mode="inline" 
-                    selectedKeys={getSelectedKey()}
-                    items={menuItems}
-                    style={{ background: '#001529' }}
+                theme="dark" 
+                mode="inline" 
+                selectedKeys={getSelectedKey()}
+                items={menuItems}
+                style={{ background: '#002329', borderRight: 0 }}
                 />
             </div>
 
-            {/* Perfil */}
-            <div style={{ padding: '16px', background: '#002140', flexShrink: 0 }}>
-                <Dropdown menu={{ items: userMenuItems }} placement="topRight" trigger={['click']}>
-                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '8px' }} className="user-profile-trigger">
-                        <Avatar icon={<UserOutlined />} style={{ background: '#52c41a', flexShrink: 0 }} />
+            {/* 3. PERFIL (Abajo) */}
+            <div style={{ 
+                padding: '16px', 
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(0,0,0,0.2)',
+                flexShrink: 0 
+            }}>
+                <Dropdown 
+                    menu={{ items: userMenuItems }} 
+                    placement="topRight" 
+                    trigger={['click']}
+                >
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        transition: 'background 0.3s',
+                    }}
+                    className="user-profile-trigger"
+                    >
+                        <Avatar 
+                            icon={<UserOutlined />} 
+                            style={{ background: '#52c41a', flexShrink: 0 }} 
+                        />
+                        
                         {!collapsed && (
                             <div style={{ marginLeft: '12px', overflow: 'hidden', flex: 1 }}>
-                                <Text style={{ color: 'white', display: 'block', fontWeight: 500 }}>{userName}</Text>
-                                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>Agente</Text>
+                                <Text style={{ color: 'white', display: 'block', fontWeight: 500 }}>
+                                    {userName}
+                                </Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', display: 'block' }}>
+                                    Agente
+                                </Text>
                             </div>
                         )}
+                        
                         {!collapsed && <MoreOutlined style={{ color: 'rgba(255,255,255,0.5)' }} />}
                     </div>
                 </Dropdown>
@@ -138,13 +180,71 @@ const AgenteLayout: React.FC = () => {
         </div>
       </Sider>
       
-      {/* Layout Principal */}
+      {/* LAYOUT PRINCIPAL */}
       <Layout style={{ marginLeft: collapsed ? 80 : 260, transition: 'margin-left 0.2s' }}>
-        <Header style={{ background: '#fff', padding: 0, height: 64 }} /> {/* Header simple */}
-        <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', borderRadius: '8px' }}>
+        <Header style={{ 
+          padding: '0 24px', 
+          background: '#ffffff', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          fontFamily: "'Michroma', sans-serif",
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          height: 64,
+          position: 'sticky',
+          top: 0,
+          zIndex: 99,
+          width: '100%'
+        }}>
+          
+          {/* Toggle y Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ fontSize: '16px', width: 46, height: 46, marginRight: 16 }}
+            />
+            <Breadcrumb>
+              <Breadcrumb.Item href="/agente-dashboard">
+                <HomeOutlined />
+              </Breadcrumb.Item>
+              <Breadcrumb.Item>Mi Portal</Breadcrumb.Item>
+            </Breadcrumb>
+          </div>
+
+          {/* Buscador */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', maxWidth: '500px', padding: '0 24px' }}>
+            <Input
+              placeholder="Buscar cliente..."
+              prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+              bordered={false}
+              style={{ backgroundColor: '#f5f5f5', borderRadius: '6px', padding: '6px 12px', width: '100%' }}
+            />
+          </div>
+
+          {/* Notificaciones */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Space size="large">
+              <Tooltip title="Notificaciones">
+                <Badge count={2} size="small" offset={[0, 5]}> 
+                  <Button type="text" icon={<BellOutlined style={{ fontSize: '18px', color: '#666' }} />} />
+                </Badge>
+              </Tooltip>
+            </Space>
+          </div>
+
+        </Header>
+        
+        <Content style={{ margin: '24px 16px', padding: 24, minHeight: 280, background: '#fff', borderRadius: '8px' }}>
           <Outlet /> 
         </Content>
       </Layout>
+
+      <style>{`
+          .user-profile-trigger:hover { background: rgba(255,255,255,0.1); }
+          .ant-layout-sider-children { height: 100%; display: flex; flex-direction: column; }
+      `}</style>
     </Layout>
   );
 };

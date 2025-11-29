@@ -92,7 +92,7 @@ const AdminMiPerfilPage: React.FC = () => {
         {/* --- COLUMNA DERECHA: Detalles y Seguridad --- */}
         <Col xs={24} md={16}>
             {/* Datos Personales */}
-            <Card title="Información de la Cuenta" style={{ marginBottom: 24 }}>
+            <Card title="Información de la Cuenta" style={{ marginBottom: 24, fontFamily: 'Michroma, sans-serif'}}>
                 <Descriptions column={1} bordered>
                     <Descriptions.Item label="Nombre Completo">
                         {userData?.nombre} {userData?.apellido}
@@ -107,14 +107,14 @@ const AdminMiPerfilPage: React.FC = () => {
             </Card>
 
             {/* Seguridad */}
-            <Card title="Seguridad">
+            <Card title="Seguridad" style={{fontFamily: 'Michroma, sans-serif'}}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <Text strong><SafetyCertificateOutlined /> Contraseña</Text>
                         <br />
                         <Text type="secondary">Última modificación: hace 3 meses</Text>
                     </div>
-                    <Button type="primary" onClick={() => setIsModalOpen(true)}>
+                    <Button type="primary" onClick={() => setIsModalOpen(true)} style={{fontFamily: 'Michroma, sans-serif'}}>
                         Cambiar Contraseña
                     </Button>
                 </div>
@@ -128,6 +128,7 @@ const AdminMiPerfilPage: React.FC = () => {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
+        style={{fontFamily: 'Michroma, sans-serif'}}
       >
         <Form layout="vertical" onFinish={handleChangePassword} form={form}>
             <Form.Item
@@ -169,10 +170,10 @@ const AdminMiPerfilPage: React.FC = () => {
             </Form.Item>
 
             <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-                <Button onClick={() => setIsModalOpen(false)} style={{ marginRight: 8 }}>
+                <Button onClick={() => setIsModalOpen(false)} style={{ marginRight: 8, fontFamily: 'Michroma, sans-serif'}}>
                     Cancelar
                 </Button>
-                <Button type="primary" htmlType="submit" loading={changePassLoading}>
+                <Button type="primary" htmlType="submit" loading={changePassLoading} style={{fontFamily: 'Michroma, sans-serif'}}>
                     Actualizar
                 </Button>
             </Form.Item>

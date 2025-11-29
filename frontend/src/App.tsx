@@ -27,6 +27,8 @@ import AdminDetallePolizaPage from './pages/polizas/AdminDetallePolizaPage';
 import AdminListarSiniestrosPage from './pages/siniestros/AdminListarSiniestrosPage';
 import AdminDetalleSiniestroPage from './pages/siniestros/AdminDetalleSiniestroPage';
 import ReportarSiniestroPage from './pages/siniestros/ReportarSiniestroPage';
+import AgenteLayout from './layouts/AgenteLayout';
+import AgenteDashboardPage from './pages/AgenteDashboardPage';
 
 // Páginas Cliente
 import ClienteDashboardPage from './pages/cliente/ClienteDashboardPage';
@@ -85,7 +87,20 @@ function App() {
           </Route>
         </Route>
 
-        {/* Rutas futuras de AGENTE pueden añadirse aquí */}
+        {/* --- RUTAS DE AGENTE --- */}
+        {/* Solo usuarios con rol 'AGENTE' pueden entrar aquí */}
+        <Route element={<ProtectedRoute allowedRoles={['AGENTE']} />}>
+           <Route path="/" element={<AgenteLayout />}>
+              
+              {/* Aquí pondremos las páginas (por ahora usa las del admin como prueba si quieres, o crea nuevas) */}
+              <Route path="agente-dashboard" element={<AgenteDashboardPage />} />
+              
+              {/* (Más adelante crearemos estas páginas específicas para agente) */}
+              {/* <Route path="agente-clientes" element={<AgenteGestionClientesPage />} /> */}
+              {/* <Route path="agente-polizas" element={<AgenteListarPolizasPage />} /> */}
+              
+           </Route>
+        </Route>
 
       </Routes>
     </BrowserRouter>

@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 // Importa componentes de Ant Design
-import { Form, Input, Button, Typography, Layout, Alert, Flex, Avatar } from 'antd'; // Importamos Avatar y Flex
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Typography, Layout, Alert, Flex, Avatar} from 'antd'; // Importamos Avatar y Flex
+import { UserOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 // Importa las herramientas para decodificar el token y navegar
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
@@ -57,7 +57,7 @@ function LoginPage() {
                         break;
                     default:
                         console.error('Rol desconocido:', userRole);
-                        navigate('/'); // Vuelve al login si el rol no es válido
+                        //navigate('/'); // Vuelve al login si el rol no es válido
                 }
             } catch (error) {
                 console.error('Error al decodificar el token:', error);
@@ -76,10 +76,27 @@ function LoginPage() {
         // Contenedor principal (fondo degradado)
         <Layout style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'linear-gradient(to bottom, #333333, #000000)' }}>
             <Content>
+                {/* --- BOTÓN VOLVER AL INICIO (MEJORADO) --- */}
+                <Button 
+                    type="link" // Usamos 'link' para que se vea limpio
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={() => navigate('/')}
+                    style={{ 
+                        position: 'absolute', // Lo saca del flujo normal
+                        top: '30px',          // Lo pega arriba
+                        left: '30px',         // Lo pega a la izquierda
+                        color: 'white',       // Color blanco para contraste
+                        fontSize: '16px',     // Un poco más grande
+                        zIndex: 10,            // Asegura que esté encima de todo
+                        fontFamily: 'Michroma, sans-serif'
+                    }}
+                >
+                    Volver
+                </Button>
+                {/* ---------------------------------------- */}
                 <Typography.Title level={2} style={{ textAlign: 'center', color: 'white', marginBottom: '24px', fontFamily: 'Michroma, sans-serif' }}>
                     Bienvenido!
                 </Typography.Title>
-                
                 {/* --- Formulario de Login Centrado --- */}
                 <div style={{
                     padding: '40px',

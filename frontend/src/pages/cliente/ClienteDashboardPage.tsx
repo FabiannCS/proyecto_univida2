@@ -1,6 +1,6 @@
 // en frontend/src/pages/cliente/ClienteDashboardPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Typography, Card, Descriptions, Tag, Table, Spin, Alert, Row, Col, Statistic, Button, Avatar, Divider, Empty, Space } from 'antd';
+import { Typography, Card, Descriptions, Tag, Table, Spin, Alert, Modal, Collapse, Row, Col, Statistic, Button, Avatar, Divider, Empty, Space } from 'antd';
 import { 
     FileProtectOutlined, DollarCircleOutlined, CalendarOutlined, UserOutlined, 
     PhoneOutlined, MailOutlined, FileAddOutlined, EyeOutlined, 
@@ -39,6 +39,7 @@ const ClienteDashboardPage: React.FC = () => {
   const [poliza, setPoliza] = useState<MiPoliza | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const getToken = () => localStorage.getItem('accessToken');
 
@@ -108,9 +109,12 @@ const ClienteDashboardPage: React.FC = () => {
         <Col xs={24} sm={8}>
             <Card 
                 hoverable 
-                style={{ textAlign: 'center', borderRadius: '12px', border: '1px solid #e8e8e8' }}
+                style={{ textAlign: 'center', borderRadius: '12px', border: '1px solid #e8e8e8', cursor: 'pointer' }}
+                onClick={() => setIsHelpOpen(true)}
             >
+                
                 <InfoCircleOutlined style={{ fontSize: '42px', color: '#faad14', marginBottom: '16px' }} />
+                
                 <Title level={4} style={{ margin: 0 }}>Centro de Ayuda</Title>
                 <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Preguntas frecuentes y soporte</Text>
             </Card>
@@ -241,6 +245,40 @@ const ClienteDashboardPage: React.FC = () => {
                 </Empty>
             </Card>
         )}
+        {/* --- MODAL DE AYUDA --- */}
+      <Modal
+        title="Centro de Ayuda"
+        open={isHelpOpen}
+        onCancel={() => setIsHelpOpen(false)}
+        footer={[
+            <Button key="close" onClick={() => setIsHelpOpen(false)} style={{fontFamily: 'Michroma, sans-serif'}}>Cerrar</Button>
+        ]}
+      >
+        <p>¿Tienes dudas? Aquí te ayudamos.</p>
+        
+        <h4 style={{ marginTop: '15px' }}>📞 Contacto Directo</h4>
+        <p>Línea gratuita: <strong>800-10-20-30</strong></p>
+        <p>Whatsapp: <strong>+591 700-00000</strong></p>
+
+        <h4 style={{ marginTop: '20px', marginBottom: '10px' }}>Preguntas Frecuentes</h4>
+        <Collapse accordion items={[
+            {
+                key: '1',
+                label: '¿Cómo reportar un siniestro?',
+                children: <p>Ve a la sección principal y pulsa el botón rojo "Reportar Siniestro". Llena el formulario con los detalles del incidente.</p>,
+            },
+            {
+                key: '2',
+                label: '¿Dónde veo mis pagos?',
+                children: <p>En tu pantalla principal, baja hasta la sección "Historial de Pagos" para ver tus transacciones recientes.</p>,
+            },
+            {
+                key: '3',
+                label: '¿Cómo cambio mis beneficiarios?',
+                children: <p>Por seguridad, debes contactar a tu agente asignado para realizar este cambio.</p>,
+            },
+        ]} />
+      </Modal>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 // en frontend/src/pages/cliente/ClienteSolicitarPolizaPage.tsx
 import React, { useState } from 'react';
 import { Typography, Card, Form, Input, Button, Select, InputNumber, Steps, message, Row, Col, Divider } from 'antd';
-import { SafetyCertificateOutlined, DollarOutlined, SendOutlined } from '@ant-design/icons';
+import { SafetyCertificateOutlined, DollarOutlined, SendOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,12 +45,21 @@ const ClienteSolicitarPolizaPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <Title level={2} style={{ textAlign: 'center', marginBottom: '10px' }}>Solicitar Nuevo Seguro</Title>
+    <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', paddingTop: 12 }}>
+
+      <div style={{ display: 'flex', gap: '16px', marginBottom: 24 }}>
+        <Button 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate(-1)} 
+            shape="circle" 
+        />
+      </div>
+
+      <Title level={2} style={{ textAlign: 'center', marginBottom: '10px', fontFamily: 'Michroma, sans-serif' }}>Solicitar Nuevo Seguro</Title>
       <Paragraph style={{ textAlign: 'center', color: '#666', marginBottom: '40px' }}>
         Completa los datos para recibir una cotización personalizada de nuestros agentes.
       </Paragraph>
-
+    
       <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <Form
             form={form}

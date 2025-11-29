@@ -13,7 +13,7 @@ const ClienteLayout: React.FC = () => {
 
   const handleLogout = () => {
     authService.logout();
-    navigate('/');
+    navigate('/login');
   };
 
   const userMenu = [
