@@ -13,7 +13,8 @@ import {
   MoreOutlined,
   SearchOutlined,
   BellOutlined,
-  UserOutlined
+  UserOutlined,
+  InboxOutlined
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -69,6 +70,12 @@ const AgenteLayout: React.FC = () => {
       icon: React.createElement(DashboardOutlined),
       label: <Link to="/agente-dashboard" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Mi Resumen</Link>,
     },
+    // --- NUEVA OPCIÓN ---
+    {
+      key: '4', // Usamos key 4 para no mover las otras
+      icon: React.createElement(InboxOutlined), // Recuerda importarlo
+      label: <Link to="/agente-solicitudes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Solicitudes Nuevas</Link>,
+    },
     {
       key: '2',
       icon: React.createElement(UsergroupAddOutlined),
@@ -83,6 +90,7 @@ const AgenteLayout: React.FC = () => {
 
   const getSelectedKey = () => {
     const path = location.pathname;
+    if (path.startsWith('/agente-solicitudes')) return ['4'];
     if (path.startsWith('/agente-clientes')) return ['2'];
     if (path.startsWith('/agente-polizas')) return ['3'];
     return ['1'];

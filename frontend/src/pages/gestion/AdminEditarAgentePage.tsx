@@ -2,93 +2,81 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Form, Input, Button, message, Row, Col, Spin } from 'antd';
 import axios from 'axios';
-import { ArrowLeftOutlined } from '@ant-design/icons';
-import { useNavigate, useParams } from 'react-router-dom'; // <-- Importa useParams
+import { useNavigate, useParams } from 'react-router-dom';
 
 const { Content } = Layout;
 const { Title } = Typography;
 const { Item } = Form;
 
-// Esta interfaz es para los datos que vienen del formulario
 interface AgenteFormValues {
     username: string;
     first_name: string;
     last_name: string;
     email: string;
     identificacion: string;
-    // No pedimos la contraseña, la edición de contraseña es mejor en un formulario separado
 }
 
 const AdminEditarAgentePage: React.FC = () => {
     const [loading, setLoading] = useState(false);
-    const [pageLoading, setPageLoading] = useState(true); // Nuevo estado para cargar datos
+    const [pageLoading, setPageLoading] = useState(true);
     const [form] = Form.useForm();
     const navigate = useNavigate();
-    const { id } = useParams<{ id: string }>(); // <-- 1. OBTIENE EL ID DE LA URL
+    const { id } = useParams<{ id: string }>();
 
     const getToken = () => localStorage.getItem('accessToken');
 
-    // --- 2. CARGA LOS DATOS DEL AGENTE (GET) ---
+    // --- CARGAR DATOS (GET) ---
     useEffect(() => {
         const fetchAgenteData = async () => {
             setPageLoading(true);
             try {
                 const token = getToken();
                 if (!token || !id) {
-                    message.error('Error: No se encontró el agente o no estás autenticado.');
-                    navigate('/admin-agentes'); // Devuelve a la lista
+                    message.error('Error de autenticación.');
+                    navigate('/admin-agentes');
                     return;
                 }
                 
                 const headers = { Authorization: `Bearer ${token}` };
 
-                // Llama a la API de "detalle" que creamos en Django
+                // Llama a la API para obtener los datos actuales
                 const response = await axios.get(`http://127.0.0.1:8000/api/agentes/${id}/`, { headers });
                 
-                // Rellena el formulario de Ant Design con los datos recibidos
+                // Rellena el formulario
                 form.setFieldsValue({
                     username: response.data.username,
                     first_name: response.data.first_name,
                     last_name: response.data.last_name,
                     email: response.data.email,
                     identificacion: response.data.identificacion,
-                    // (Los campos del perfil Agente, como codigo_agente, también irían aquí)
                 });
 
             } catch (error) {
-                console.error('Error al cargar datos del agente:', error);
-                message.error('No se pudieron cargar los datos del agente.');
+                console.error('Error al cargar agente:', error);
+                message.error('No se pudo cargar el agente. Puede que no exista o tenga el rol incorrecto.');
             } finally {
-                setPageLoading(false); // Deja de cargar la página
+                setPageLoading(false);
             }
         };
 
         fetchAgenteData();
-    }, [id, form, navigate]); // Se ejecuta si el 'id', 'form' o 'navigate' cambian
+    }, [id, form, navigate]);
 
-    // --- 3. ACTUALIZA LOS DATOS (PUT/PATCH) ---
+    // --- GUARDAR CAMBIOS (PATCH) ---
     const handleFormSubmit = async (values: AgenteFormValues) => {
-        setLoading(true); // Activa el spinner del botón
+        setLoading(true);
         try {
             const token = getToken();
-            if (!token) {
-                message.error('No estás autenticado.');
-                setLoading(false);
-                return;
-            }
-            
             const headers = { Authorization: `Bearer ${token}` };
 
-            // Hacemos la petición PUT (o PATCH) a la API de edición
+            // CORRECCIÓN: Usamos PATCH en lugar de PUT
             await axios.patch(`http://127.0.0.1:8000/api/agentes/${id}/editar/`, values, { headers });
             
             message.success('Agente actualizado exitosamente.');
-            
-            // Redirige de vuelta a la lista de agentes
             navigate('/admin-agentes'); 
 
         } catch (error: any) {
-            console.error('Error al actualizar agente:', error);
+            console.error('Error al actualizar:', error);
             if (error.response && error.response.data) {
                 message.error(`Error: ${JSON.stringify(error.response.data)}`);
             } else {
@@ -99,7 +87,6 @@ const AdminEditarAgentePage: React.FC = () => {
         }
     };
 
-    // Muestra un spinner grande mientras carga los datos del agente
     if (pageLoading) {
         return (
             <Layout style={{ padding: '50px', display: 'grid', placeItems: 'center' }}>
@@ -110,20 +97,12 @@ const AdminEditarAgentePage: React.FC = () => {
 
     return (
         <Layout>
-            <Content style={{padding: '15px'}}>
-                <Button
-                    type="default" // O "ghost" para que sea más sutil
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => navigate(-1)} // <-- ¡LA MAGIA! -1 significa "ir atrás"
-                    style={{ marginBottom: '16px', fontFamily: 'Michroma, sans-serif'}}
-                    >
-                    Volver
-                </Button>
-                <Title level={2} style={{ textAlign: 'center', marginBottom: '24px', fontFamily: 'Michroma, sans-serif'}}>
+            <Content>
+                <Title level={2} style={{ textAlign: 'center', marginBottom: '24px' }}>
                     Editar Agente
                 </Title>
                 <Form
-                    form={form} // Conecta el formulario a los datos cargados
+                    form={form} // CORRECCIÓN: Conectamos la instancia del formulario
                     layout="vertical"
                     onFinish={handleFormSubmit}
                     style={{ maxWidth: '800px', margin: '0 auto' }}
@@ -133,7 +112,7 @@ const AdminEditarAgentePage: React.FC = () => {
                             <Item
                                 name="username"
                                 label="Nombre de Usuario"
-                                rules={[{ required: true, message: 'Este campo es obligatorio' }]}
+                                rules={[{ required: true, message: 'Obligatorio' }]}
                             >
                                 <Input />
                             </Item>
@@ -141,8 +120,8 @@ const AdminEditarAgentePage: React.FC = () => {
                         <Col span={12}>
                             <Item
                                 name="email"
-                                label="Email"
-                                rules={[{ type: 'email', message: 'No es un email válido' }]}
+                                label="Correo electrónico"
+                                rules={[{ type: 'email', required: true }]}
                             >
                                 <Input />
                             </Item>
@@ -162,21 +141,16 @@ const AdminEditarAgentePage: React.FC = () => {
                     </Row>
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Item
-                                name="identificacion"
-                                label="Nº de Carnet (CI)"
-                            >
+                            <Item name="identificacion" label="Nº de Carnet (CI)">
                                 <Input />
                             </Item>
                         </Col>
-                         {/* Puedes añadir aquí los otros campos del perfil Agente (comisión, etc.) */}
                     </Row>
+
                     <Item>
-                        <center>
-                        <Button type="primary" htmlType="submit" loading={loading} style={{ marginTop: '8px', fontFamily: 'Michroma, sans-serif', padding: '17px 45px'}}>
+                        <Button type="primary" htmlType="submit" loading={loading} style={{ marginTop: '16px' }}>
                             Guardar Cambios
                         </Button>
-                        </center>
                     </Item>
                 </Form>
             </Content>

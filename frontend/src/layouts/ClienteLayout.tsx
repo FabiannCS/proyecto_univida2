@@ -71,7 +71,7 @@ const ClienteLayout: React.FC = () => {
                     type="primary" 
                     danger 
                     icon={<WarningOutlined />}
-                    onClick={() => console.log("Ir a reportar siniestro")}
+                    onClick={() => navigate('/reportar-siniestro')}
                 >
                     Reportar Siniestro
                 </Button>
