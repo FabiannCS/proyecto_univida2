@@ -40,10 +40,12 @@ class Cliente(models.Model):
 class Poliza(models.Model):
     ESTADO_CHOICES = [
         ('cotizacion', 'En Cotización'),
+        ('pendiente_pago', 'Pendiente de Pago'),
         ('activa', 'Activa'),
         ('inactiva', 'Inactiva'),
         ('vencida', 'Vencida'),
-        ('cancelada', 'Cancelada'),  # ← AÑADIDO
+        ('cancelada', 'Cancelada'),
+        ('rechazada', 'Rechazada'),
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
@@ -77,6 +79,8 @@ class Poliza(models.Model):
         db_table = 'univida_poliza'
 
 # Aireyu
+# en seguros/models.py
+
 class Factura(models.Model):
     ESTADO_FACTURA = [
         ('pendiente', 'Pendiente'),
@@ -91,15 +95,12 @@ class Factura(models.Model):
     fecha_emision = models.DateField()
     fecha_vencimiento = models.DateField()
     estado = models.CharField(max_length=20, choices=ESTADO_FACTURA, default='pendiente')
-    concepto = models.CharField(max_length=255, default='Prima anual de seguro')
+    concepto = models.CharField(max_length=255, default='Prima de seguro')
     
     def __str__(self):
-        return f"Factura {self.numero_factura} - {self.poliza.numero_poliza}"
-    
-    class Meta:
-        db_table = 'univida_factura'
-        verbose_name = 'Factura'
-        verbose_name_plural = 'Facturas'
+        return f"Factura {self.numero_factura}"
+
+# en seguros/models.py
 
 class Pago(models.Model):
     ESTADO_PAGO = [
@@ -121,27 +122,36 @@ class Pago(models.Model):
     fecha_pago = models.DateTimeField(auto_now_add=True)
     metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO)
     referencia_pago = models.CharField(max_length=100, blank=True, null=True)
+    
+    # --- ESTE ES EL CAMPO QUE TE FALTA ---
     estado = models.CharField(max_length=20, choices=ESTADO_PAGO, default='completado')
+    # -------------------------------------
+
     descripcion = models.TextField(blank=True, null=True)
     
     def __str__(self):
-        return f"Pago {self.id} - Factura {self.factura.numero_factura}"
+        return f"Pago {self.id} - {self.factura.numero_factura}"
     
     class Meta:
         db_table = 'univida_pago'
         verbose_name = 'Pago'
         verbose_name_plural = 'Pagos'
 
+# en seguros/models.py
 class Beneficiario(models.Model):
     poliza = models.ForeignKey(Poliza, on_delete=models.CASCADE, related_name='beneficiarios')
-    nombre_completo = models.CharField(max_length=200)
+    nombre_completo = models.CharField(max_length=100)
+    paterno = models.CharField(max_length=100, blank=True, null=True)
+    materno = models.CharField(max_length=100, blank=True, null=True)
     parentesco = models.CharField(max_length=50)
     porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
     fecha_nacimiento = models.DateField(blank=True, null=True)
-    
+    ci = models.CharField(max_length=20, blank=True, null=True, verbose_name="Carnet de Identidad")
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+
     def __str__(self):
         return f"{self.nombre_completo} ({self.parentesco})"
-    
+
     class Meta:
         db_table = 'univida_beneficiario'
 

@@ -11,6 +11,10 @@ urlpatterns = [
     path('clientes/<int:cliente_id>/editar/', views.editar_cliente, name='editar_cliente'),
     path('clientes/<int:cliente_id>/eliminar/', views.eliminar_cliente, name='eliminar_cliente'),
     path('clientes/<int:cliente_id>/reactivar/', views.reactivar_cliente, name='reactivar_cliente'),
+    #Ruta para que el cliente solicite una póliza
+    path('polizas/solicitar/', views.solicitar_poliza, name='solicitar_poliza'),
+
+    path('cliente/me/', views.mi_perfil_cliente, name='mi_perfil_cliente'),
 
     # APIs para Pólizas
     path('polizas/', views.lista_polizas, name='lista_polizas'),
@@ -29,6 +33,9 @@ urlpatterns = [
     path('agentes/<int:agente_id>/editar/', views.editar_agente, name='editar_agente'),
     path('agentes/<int:agente_id>/eliminar/', views.eliminar_agente, name='eliminar_agente'),
     path('agentes/<int:agente_id>/reactivar/', views.reactivar_agente, name='reactivar_agente'),
+    path('agente/me/', views.mi_perfil_agente, name='mi_perfil_agente'),
+    #API PARA ACTIVAR/INACTIVAR CLIENTES DESDE AGENTE
+    path('clientes/<int:cliente_id>/toggle-estado/', views.toggle_estado_cliente, name='toggle_estado_cliente'),
 
     # APIs para Facturas y Pagos
     path('facturas/', views.lista_facturas, name='lista_facturas'),
@@ -46,4 +53,11 @@ urlpatterns = [
 
     # Rutas públicas / registro
     path('registro/', views.registrar_cliente_publico, name='registro_publico'),
+
+    # Ruta para generación de PDF de póliza
+    path('polizas/<int:poliza_id>/pdf/', views.generar_pdf_poliza, name='generar_pdf_poliza'),
+
+    # RUTAS PARA FACTURAS Y PAGOS
+    path('facturas/', views.lista_facturas, name='lista_facturas'),
+    path('pagos/', views.lista_pagos, name='lista_pagos'),
 ]
