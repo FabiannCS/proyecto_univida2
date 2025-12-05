@@ -1,9 +1,7 @@
-// en frontend/src/pages/agente/AgenteSolicitudesPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Typography, Table, Button, Card, Tag, message, Space } from 'antd';
-import { CheckCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { Typography, Table, Button, Card, Tag, message, Space, Tabs, Popconfirm } from 'antd';
+import { CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import { jwtDecode } from "jwt-decode";
 
 const { Title } = Typography;
 
@@ -15,7 +13,6 @@ interface Solicitud {
     usuario_info: {
       first_name: string;
       last_name: string;
-      email: string;
     }
   };
   estado: string;
@@ -34,13 +31,14 @@ const AgenteSolicitudesPage: React.FC = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
       
-      // 1. Pedimos TODAS las pólizas
-      // (Tu compañero debería crear un endpoint filtrado: /api/polizas/pendientes/)
       const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
       
-      // 2. Filtramos en el frontend: Solo estado 'cotizacion'
-      const pendientes = response.data.filter((p: any) => p.estado === 'cotizacion');
-      setSolicitudes(pendientes);
+      // FILTRO 1: Aquí solo mostramos lo que es "Entrada" (Cotizaciones y Canceladas por cliente)
+      // NO mostramos activas ni rechazadas aquí.
+      const filtradas = response.data.filter((p: any) => 
+          p.estado === 'cotizacion' || p.estado === 'cancelada'
+      );
+      setSolicitudes(filtradas);
 
     } catch (error) {
       console.error(error);
@@ -54,70 +52,61 @@ const AgenteSolicitudesPage: React.FC = () => {
     fetchSolicitudes();
   }, []);
 
-  // --- FUNCIÓN PARA ACEPTAR SOLICITUD ---
-  const handleAceptar = async (polizaId: number) => {
+  // --- CAMBIAR ESTADO (Aceptar o Rechazar) ---
+  const cambiarEstado = async (polizaId: number, nuevoEstado: string) => {
       try {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
-
-          // 1. Necesitamos saber el ID del Agente actual
-          // (Esto es un truco temporal, lo ideal es que el backend lo sepa por el token)
-          const decoded: any = jwtDecode(token!);
-          // Vamos a suponer que el backend es inteligente y si mandamos agente_id lo asigna
-          // O mejor: Enviamos solo el cambio de estado y el backend asigna al "request.user.agente"
           
           await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/`, {
-              estado: 'activa', // Cambiamos estado a ACTIVA
-              // agente: ID_DEL_AGENTE (Tu backend debe manejar esto)
+              estado: nuevoEstado, 
+              // El backend asignará el agente automáticamente al guardar
           }, { headers });
 
-          message.success('¡Solicitud aceptada! Cliente asignado a tu cartera.');
-          fetchSolicitudes(); // Recargar la lista
+          message.success(`Solicitud ${nuevoEstado === 'pendiente_pago' ? 'aceptada' : 'rechazada'} correctamente.`);
+          fetchSolicitudes(); // Recargar la lista (la póliza desaparecerá de esta vista)
 
       } catch (error) {
-          console.error(error);
-          message.error('Error al aceptar la solicitud');
+          message.error('Error al procesar la solicitud');
       }
   };
 
   const columns = [
-    {
-      title: 'Nº Solicitud',
-      dataIndex: 'numero_poliza',
-      key: 'numero_poliza',
+    { title: 'Nº Solicitud', dataIndex: 'numero_poliza', key: 'num' },
+    { 
+      title: 'Cliente', key: 'cli', 
+      render: (_:any, r:Solicitud) => `${r.cliente_info.usuario_info.first_name} ${r.cliente_info.usuario_info.last_name}` 
+    },
+    { title: 'Monto', dataIndex: 'suma_asegurada', key: 'monto', render: (m:string) => `$${parseFloat(m).toLocaleString()}` },
+    { 
+      title: 'Estado', dataIndex: 'estado', key: 'estado',
+      render: (e: string) => <Tag color={e === 'cotizacion' ? 'orange' : 'red'}>{e.toUpperCase()}</Tag>
     },
     {
-      title: 'Cliente',
-      key: 'cliente',
-      render: (_: any, record: Solicitud) => 
-        `${record.cliente_info.usuario_info.first_name} ${record.cliente_info.usuario_info.last_name}`
-    },
-    {
-      title: 'Monto Solicitado',
-      dataIndex: 'suma_asegurada',
-      key: 'suma',
-      render: (m: string) => `$${parseFloat(m).toLocaleString()}`
-    },
-    {
-      title: 'Estado',
-      dataIndex: 'estado',
-      key: 'estado',
-      render: () => <Tag color="orange">PENDIENTE</Tag>
-    },
-    {
-      title: 'Acciones',
-      key: 'acciones',
+      title: 'Acciones', key: 'acc',
       render: (_: any, record: Solicitud) => (
-        <Space>
-            <Button 
-                type="primary" 
-                icon={<CheckCircleOutlined />} 
-                onClick={() => handleAceptar(record.id)}
-            >
-                Aceptar
-            </Button>
-            <Button icon={<EyeOutlined />}>Ver</Button>
-        </Space>
+        record.estado === 'cotizacion' ? (
+            <Space>
+                <Button 
+                    type="primary" 
+                    size="small"
+                    icon={<CheckCircleOutlined />} 
+                    onClick={() => cambiarEstado(record.id, 'pendiente_pago')} // Aceptar -> Pendiente Pago
+                >
+                    Aceptar
+                </Button>
+                
+                <Popconfirm 
+                    title="¿Rechazar esta solicitud?" 
+                    onConfirm={() => cambiarEstado(record.id, 'rechazada')} // Rechazar -> Rechazada
+                    okText="Sí, Rechazar" cancelText="Cancelar"
+                >
+                    <Button size="small" danger icon={<CloseCircleOutlined />}>Rechazar</Button>
+                </Popconfirm>
+            </Space>
+        ) : (
+            <span>Cancelada por Cliente</span>
+        )
       ),
     },
   ];
@@ -126,13 +115,7 @@ const AgenteSolicitudesPage: React.FC = () => {
     <div>
       <Title level={2} style={{ fontFamily: "'Michroma', sans-serif" }}>Bandeja de Solicitudes</Title>
       <Card bordered={false}>
-        <Table 
-            dataSource={solicitudes} 
-            columns={columns} 
-            rowKey="id" 
-            loading={loading}
-            locale={{ emptyText: 'No hay nuevas solicitudes pendientes' }}
-        />
+        <Table dataSource={solicitudes} columns={columns} rowKey="id" loading={loading} />
       </Card>
     </div>
   );

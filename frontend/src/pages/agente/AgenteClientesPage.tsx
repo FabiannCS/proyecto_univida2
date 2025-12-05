@@ -1,16 +1,17 @@
 // en frontend/src/pages/agente/AgenteClientesPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Typography, Table, Button, Card, Tag, Space, message, Tabs, Popconfirm, Tooltip, Modal, Form, Input } from 'antd';
-import { EditOutlined, StopOutlined, CheckCircleOutlined, EyeOutlined, MailOutlined, PhoneOutlined, UserOutlined, IdcardOutlined, PlusOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { Typography, Table, Button, Card, Tag, Space, message, Tabs, Popconfirm, Tooltip, Modal, Form, Input, Row, Col } from 'antd';
+import { EditOutlined, StopOutlined, CheckCircleOutlined, EyeOutlined, MailOutlined, PhoneOutlined, UserOutlined, IdcardOutlined, HomeOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
+// Interfaz (Asegúrate que coincida con tu backend)
 interface Cliente {
   id: number;
   identificacion: string;
-  direccion?: string; // Añadido
+  direccion?: string;
   usuario_info: {
     id: number;
     first_name: string;
@@ -22,9 +23,9 @@ interface Cliente {
 }
 
 const AgenteClientesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   
   // Estados para el Modal de Edición
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,8 +42,6 @@ const AgenteClientesPage: React.FC = () => {
       const token = getToken();
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
-      
-      // Recuerda: Tu backend debería filtrar esto para mostrar solo los de este agente
       const response = await axios.get('http://127.0.0.1:8000/api/clientes/', { headers });
       setClientes(response.data);
     } catch (error) {
@@ -53,14 +52,11 @@ const AgenteClientesPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchMisClientes();
-  }, []);
+  useEffect(() => { fetchMisClientes(); }, []);
 
   // --- 2. Abrir Modal de Edición ---
   const openEditModal = (cliente: Cliente) => {
       setEditingClient(cliente);
-      // Rellenamos el formulario con los datos actuales
       form.setFieldsValue({
           first_name: cliente.usuario_info.first_name,
           last_name: cliente.usuario_info.last_name,
@@ -72,7 +68,7 @@ const AgenteClientesPage: React.FC = () => {
       setIsModalOpen(true);
   };
 
-  // --- 3. Guardar Cambios (PATCH) ---
+  // --- 3. Guardar Cambios (PATCH) - CORREGIDO ---
   const handleUpdateCliente = async (values: any) => {
       setActionLoading(true);
       try {
@@ -81,51 +77,49 @@ const AgenteClientesPage: React.FC = () => {
           
           if (!editingClient) return;
 
-          // Estructuramos los datos para el serializer (Usuario anidado)
+          // Estructura correcta para el serializer anidado
+          // Nota: Tu backend debe estar preparado para recibir 'usuario' como objeto en el PATCH de Cliente
+          // Si tu backend usa 'ClienteSerializer' estándar, esto podría fallar si no tiene update anidado.
+          // Lo ideal es usar un serializer específico o que tu backend soporte writable nested serializers.
+          
           const dataToSend = {
+              identificacion: values.identificacion,
+              direccion: values.direccion,
+              // Intentamos enviar datos de usuario anidados
               usuario: {
                   first_name: values.first_name,
                   last_name: values.last_name,
                   email: values.email,
                   telefono: values.telefono
-              },
-              identificacion: values.identificacion,
-              direccion: values.direccion
+              }
           };
 
-          // Llamada a la API para actualizar (asumiendo que el endpoint es /api/clientes/:id/)
           await axios.patch(`http://127.0.0.1:8000/api/clientes/${editingClient.id}/`, dataToSend, { headers });
 
           message.success('Cliente actualizado correctamente');
           setIsModalOpen(false);
-          fetchMisClientes(); // Recargar la tabla
+          fetchMisClientes(); 
 
       } catch (error) {
           console.error(error);
-          message.error('Error al actualizar cliente. Verifica los datos.');
+          message.error('Error al actualizar. Verifica que el email no esté duplicado.');
       } finally {
           setActionLoading(false);
       }
   };
 
-  // --- 4. Cambiar Estado (Activar/Desactivar) ---
+  // --- 4. Cambiar Estado ---
   const toggleEstadoCliente = async (cliente: Cliente, activar: boolean) => {
       try {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
           
-          // Aquí asumimos que tu backend acepta un PATCH directo al usuario o cliente para esto
-          // Por ahora simulamos el cambio visualmente o hacemos un patch simple
-          // await axios.patch(...) 
+          await axios.patch(`http://127.0.0.1:8000/api/clientes/${cliente.id}/toggle-estado/`, {
+              is_active: activar 
+          }, { headers });
           
           message.success(`Cliente ${activar ? 'activado' : 'desactivado'} correctamente.`);
-          
-          // Actualización optimista de la UI
-          setClientes(prev => prev.map(c => 
-              c.id === cliente.id 
-              ? { ...c, usuario_info: { ...c.usuario_info, is_active: activar } } 
-              : c
-          ));
+          fetchMisClientes(); 
 
       } catch (error) {
           message.error('Error al cambiar estado del cliente');
@@ -134,54 +128,48 @@ const AgenteClientesPage: React.FC = () => {
 
   const columns = [
     {
-      title: 'Cliente',
-      key: 'cliente',
-      render: (_: any, record: Cliente) => (
+      title: 'Cliente', key: 'cliente',
+      render: (_: any, r: Cliente) => (
         <Space direction="vertical" size={0}>
-            <span style={{ fontWeight: 'bold' }}>{record.usuario_info.first_name} {record.usuario_info.last_name}</span>
-            <span style={{ fontSize: '12px', color: '#888' }}>CI: {record.identificacion}</span>
+            <span style={{ fontWeight: 'bold' }}>{r.usuario_info.first_name} {r.usuario_info.last_name}</span>
+            <span style={{ fontSize: '12px', color: '#888' }}>CI: {r.identificacion}</span>
         </Space>
       ),
     },
     {
-      title: 'Contacto',
-      key: 'contacto',
-      render: (_: any, record: Cliente) => (
+      title: 'Contacto', key: 'contacto',
+      render: (_: any, r: Cliente) => (
         <Space direction="vertical" size={2}>
-            <span style={{ fontSize: '12px' }}><MailOutlined /> {record.usuario_info.email}</span>
-            <span style={{ fontSize: '12px' }}><PhoneOutlined /> {record.usuario_info.telefono}</span>
+            <span style={{ fontSize: '12px' }}><MailOutlined /> {r.usuario_info.email}</span>
+            <span style={{ fontSize: '12px' }}><PhoneOutlined /> {r.usuario_info.telefono}</span>
         </Space>
       ),
     },
     {
-      title: 'Estado',
-      key: 'estado',
-      render: (_: any, record: Cliente) => (
-          record.usuario_info.is_active 
-          ? <Tag color="green">ACTIVO</Tag> 
-          : <Tag color="red">INACTIVO</Tag>
+      title: 'Estado', key: 'estado',
+      render: (_: any, r: Cliente) => (
+          r.usuario_info.is_active ? <Tag color="green">ACTIVO</Tag> : <Tag color="red">INACTIVO</Tag>
       )
     },
     {
-      title: 'Acciones',
-      key: 'acciones',
+      title: 'Acciones', key: 'acciones',
       render: (_: any, record: Cliente) => (
         <Space>
-            <Tooltip title="Ver Detalles">
-                <Button size="small" icon={<EyeOutlined />} onClick={() => message.info('Detalle completo en construcción')} />
+            {/* BOTÓN VER DETALLES - AHORA FUNCIONA */}
+            <Tooltip title="Ver Detalles Completos">
+                <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/agente-clientes/${record.id}`)} >
+                  Detalles
+                </Button>
             </Tooltip>
             
-            {/* BOTÓN EDITAR (Ahora abre el Modal) */}
+            {/* BOTÓN EDITAR */}
             <Tooltip title="Editar Datos">
-                <Button 
-                    size="small" 
-                    type="primary" 
-                    ghost 
-                    icon={<EditOutlined />} 
-                    onClick={() => openEditModal(record)} // <-- ABRE MODAL
-                />
+                <Button size="small" type="primary" ghost icon={<EditOutlined />} onClick={() => openEditModal(record)} >
+                  Editar
+                </Button>
             </Tooltip>
             
+            {/* BOTÓN ESTADO */}
             {record.usuario_info.is_active ? (
                 <Popconfirm title="¿Desactivar cliente?" onConfirm={() => toggleEstadoCliente(record, false)}>
                     <Button size="small" danger icon={<StopOutlined />}>Baja</Button>
@@ -202,16 +190,9 @@ const AgenteClientesPage: React.FC = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0, fontFamily: "'Michroma', sans-serif"}}>Mi Cartera de Clientes</Title>
+        <Title level={2} style={{ margin: 0, fontFamily: "'Michroma', sans-serif" }}>Mi Cartera de Clientes</Title>
+        <Button style={{fontFamily: 'Michroma, sans-serif'}} type="primary" icon={<PlusOutlined />} onClick={() => navigate('/agente-clientes/crear')}>Registrar Nuevo Cliente</Button>
       </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => navigate('/agente-clientes/crear')}
-          style={{ marginBottom: 16, fontFamily: 'Michroma, sans-serif' }}
-        >
-          Crear Nuevo Cliente
-        </Button>
 
       <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Tabs defaultActiveKey="1" items={[
@@ -220,47 +201,21 @@ const AgenteClientesPage: React.FC = () => {
         ]} />
       </Card>
 
-      {/* --- MODAL DE EDICIÓN --- */}
-      <Modal
-        title="Editar Cliente"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-      >
-        <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleUpdateCliente}
-        >
-            <Space style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                <Form.Item name="first_name" label="Nombre" rules={[{ required: true }]}>
-                    <Input prefix={<UserOutlined />} />
-                </Form.Item>
-                <Form.Item name="last_name" label="Apellido" rules={[{ required: true }]}>
-                    <Input prefix={<UserOutlined />} />
-                </Form.Item>
-            </Space>
-
-            <Form.Item name="email" label="Correo Electrónico" rules={[{ type: 'email', required: true }]}>
-                <Input prefix={<MailOutlined />} />
-            </Form.Item>
-
-            <Space style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                <Form.Item name="identificacion" label="CI / DNI">
-                    <Input prefix={<IdcardOutlined />} />
-                </Form.Item>
-                <Form.Item name="telefono" label="Teléfono">
-                    <Input prefix={<PhoneOutlined />} />
-                </Form.Item>
-            </Space>
-            
-            <Form.Item name="direccion" label="Dirección">
-                <Input.TextArea rows={2} />
-            </Form.Item>
-
-            <div style={{ textAlign: 'right', marginTop: 16 }}>
+      <Modal title="Editar Cliente" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null}>
+        <Form form={form} layout="vertical" onFinish={handleUpdateCliente}>
+            <Row gutter={16}>
+                <Col span={12}><Form.Item name="first_name" label="Nombre" rules={[{ required: true }]}><Input /></Form.Item></Col>
+                <Col span={12}><Form.Item name="last_name" label="Apellido" rules={[{ required: true }]}><Input /></Form.Item></Col>
+            </Row>
+            <Form.Item name="email" label="Email" rules={[{ type: 'email', required: true }]}><Input /></Form.Item>
+            <Row gutter={16}>
+                <Col span={12}><Form.Item name="identificacion" label="CI/DNI"><Input /></Form.Item></Col>
+                <Col span={12}><Form.Item name="telefono" label="Teléfono"><Input /></Form.Item></Col>
+            </Row>
+            <Form.Item name="direccion" label="Dirección"><Input.TextArea rows={2} /></Form.Item>
+            <div style={{ textAlign: 'right' }}>
                 <Button onClick={() => setIsModalOpen(false)} style={{ marginRight: 8 }}>Cancelar</Button>
-                <Button type="primary" htmlType="submit" loading={actionLoading}>Guardar Cambios</Button>
+                <Button type="primary" htmlType="submit" loading={actionLoading}>Guardar</Button>
             </div>
         </Form>
       </Modal>

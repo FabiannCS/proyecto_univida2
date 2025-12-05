@@ -37,6 +37,10 @@ import AgenteCrearClientePage from './pages/agente/AgenteCrearClientePage';
 import AgenteCrearPolizaPage from './pages/agente/AgenteCrearPolizaPage';
 import AgenteDashboardPage from './pages/agente/AgenteDashboardPage';
 import ClienteReportarSiniestroPage from './pages/cliente/ClienteReportarSiniestroPage';
+import ClienteMisSiniestrosPage from './pages/cliente/ClienteMisSiniestrosPage';
+import AgenteRegistrarPagoPage from './pages/agente/AgenteRegistrarPagoPage';
+import AgenteDetallePolizaPage from './pages/agente/AgenteDetallePolizaPage';
+import AgenteDetalleClientePage from './pages/agente/AgenteDetalleClientePage';
 
 // Páginas Cliente
 import ClienteDashboardPage from './pages/cliente/ClienteDashboardPage';
@@ -94,6 +98,7 @@ function App() {
             <Route path="/solicitar-poliza" element={<ClienteSolicitarPolizaPage />} />
             <Route path="/catalogo" element={<ClienteCatalogoPage />} />
             <Route path="/reportar-siniestro" element={<ClienteReportarSiniestroPage />} />
+            <Route path="/mis-siniestros" element={<ClienteMisSiniestrosPage />} />
           </Route>
         </Route>
 
@@ -103,13 +108,15 @@ function App() {
            <Route path="/" element={<AgenteLayout />}>
            <Route path="agente-solicitudes" element={<AgenteSolicitudesPage />} />
               
-              {/* Aquí pondremos las páginas (por ahora usa las del admin como prueba si quieres, o crea nuevas) */}
               <Route path="agente-dashboard" element={<AgenteDashboardPage />} />
               <Route path="agente-clientes" element={<AgenteClientesPage />} />
               <Route path="agente-polizas" element={<AgenteListarPolizasPage />} />
               <Route path="agente-perfil" element={<AgenteMiPerfilPage />} />
               <Route path="agente-clientes/crear" element={<AgenteCrearClientePage />} />
+              <Route path="agente-clientes/:id" element={<AgenteDetalleClientePage />} />
               <Route path="agente-polizas/crear" element={<AgenteCrearPolizaPage />} />
+              <Route path="agente-polizas/:id" element={<AgenteDetallePolizaPage />} />
+              <Route path="agente-pagos" element={<AgenteRegistrarPagoPage />} />
               
            </Route>
         </Route>

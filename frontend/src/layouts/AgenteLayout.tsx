@@ -14,7 +14,8 @@ import {
   SearchOutlined,
   BellOutlined,
   UserOutlined,
-  InboxOutlined
+  InboxOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -85,6 +86,11 @@ const AgenteLayout: React.FC = () => {
       key: '3',
       icon: React.createElement(FileDoneOutlined),
       label: <Link to="/agente-polizas" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Mis Pólizas</Link>,
+    },
+    {
+    key: '5',
+    icon: React.createElement(DollarOutlined),
+    label: <Link to="/agente-pagos" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Caja / Pagos</Link>,
     },
   ];
 

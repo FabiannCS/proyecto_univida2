@@ -4,7 +4,7 @@ import { Typography, Card, Descriptions, Tag, Table, Spin, Alert, Row, Col, Stat
 import { 
     FileProtectOutlined, DollarCircleOutlined, CalendarOutlined, UserOutlined, 
     PhoneOutlined, MailOutlined, FileAddOutlined, EyeOutlined, 
-    InfoCircleOutlined, ClockCircleOutlined, QuestionCircleOutlined 
+    InfoCircleOutlined, ClockCircleOutlined, QuestionCircleOutlined, FileExclamationOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -113,21 +113,21 @@ const ClienteDashboardPage: React.FC = () => {
   // --- MENÚ RÁPIDO (Con Ayuda funcional) ---
   const MenuRapido = () => (
     <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
             <Card hoverable style={{ textAlign: 'center', borderRadius: '12px' }} onClick={() => navigate('/catalogo')}>
                 <FileAddOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }} />
                 <Title level={5} style={{ margin: 0 }}>Solicitar Póliza</Title>
                 <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Cotiza un nuevo seguro a tu medida</Text>
             </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
             <Card hoverable style={{ textAlign: 'center', borderRadius: '12px' }} onClick={() => document.getElementById('detalle-poliza')?.scrollIntoView({ behavior: 'smooth' })}>
                 <EyeOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '12px' }} />
                 <Title level={5} style={{ margin: 0 }}>Ver Mi Póliza</Title>
                 <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Revisa coberturas y beneficios</Text>
             </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
             <Card 
                 hoverable 
                 style={{ textAlign: 'center', borderRadius: '12px' }}
@@ -136,6 +136,20 @@ const ClienteDashboardPage: React.FC = () => {
                 <InfoCircleOutlined style={{ fontSize: '32px', color: '#faad14', marginBottom: '12px' }} />
                 <Title level={5} style={{ margin: 0 }}>Ayuda</Title>
                 <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Preguntas frecuentes y soporte</Text>
+            </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+            <Card 
+                hoverable 
+                style={{ textAlign: 'center', borderRadius: '12px' }}
+                // ¡OJO! Aquí corregimos la navegación:
+                onClick={() => navigate('/mis-siniestros')} 
+            >
+                {/* Ícono de Archivo con Exclamación en color Rojo Suave */}
+                <FileExclamationOutlined style={{ fontSize: '32px', color: '#ff4d4f', marginBottom: '12px' }} />
+                
+                <Title level={5} style={{ margin: 0 }}>Historial de Siniestros</Title>
+                <Text type="secondary" style={{ display: 'block', marginTop: '8px' }}>Revisa el estado de tus reclamos</Text>
             </Card>
         </Col>
     </Row>

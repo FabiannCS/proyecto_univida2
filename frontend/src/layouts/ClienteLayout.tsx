@@ -1,8 +1,11 @@
 import React from 'react';
-import { Layout, Button, Typography, Dropdown, Avatar, Space, Tooltip } from 'antd';
-import { LogoutOutlined, UserOutlined, DownOutlined, WarningOutlined, DownloadOutlined } from '@ant-design/icons';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Layout, Button, Typography, Dropdown, Avatar, Space, Tooltip, message,} from 'antd';
+import { LogoutOutlined, UserOutlined, DownOutlined, WarningOutlined, DownloadOutlined} from '@ant-design/icons';
+import { Outlet, useNavigate} from 'react-router-dom';
 import { authService } from '../services/authService';
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -10,6 +13,7 @@ const { Title } = Typography;
 const ClienteLayout: React.FC = () => {
   const navigate = useNavigate();
   const userName = authService.getFullName() || 'Cliente';
+  const [actionLoading, setActionLoading] = React.useState(false);
 
   const handleLogout = () => {
     authService.logout();
@@ -31,6 +35,58 @@ const ClienteLayout: React.FC = () => {
       onClick: handleLogout,
     },
   ];
+ const handleDownloadPDF = async () => {
+    console.log("1. Botón PDF presionado"); // <-- Debug
+    try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        // ... (código de decodificar token) ...
+        const decodedToken: any = jwtDecode(token);
+        const miUsername = decodedToken.username;
+
+        console.log("2. Buscando pólizas..."); // <-- Debug
+        const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        
+        const miPoliza = resPolizas.data.find((p: any) => 
+            p.cliente_info?.usuario_info?.username === miUsername &&
+            p.estado !== 'cancelada'
+        );
+
+        if (!miPoliza) {
+            window.alert("No tienes pólizas registradas.");
+            return;
+        }
+
+        console.log("3. Póliza encontrada, estado:", miPoliza.estado); // <-- Debug clave
+
+        // --- VALIDACIÓN ---
+        if (miPoliza.estado !== 'activa') {
+            window.alert("AVISO: Tu póliza aún está en revisión ('" + miPoliza.estado + "'). Solo se pueden descargar pólizas ACTIVAS.");
+            return; 
+        }
+        // ------------------
+
+        console.log("4. Iniciando descarga..."); // <-- Debug
+        message.loading({ content: 'Generando documento oficial...', key: 'pdfDownload' });
+
+        // Esta llamada fallará si no hicimos el backend
+        const response = await axios.get(`http://127.0.0.1:8000/api/polizas/${miPoliza.id}/pdf/`, {
+            headers,
+            responseType: 'blob',
+        });
+        
+        // ... (código de descarga del blob) ...
+
+        message.success({ content: 'Póliza descargada', key: 'pdfDownload' });
+
+    } catch (error) {
+        console.error("Error en PDF:", error);
+        window.alert("ERROR: No se pudo descargar el PDF. (Probablemente falta el backend)");
+    }
+  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -60,10 +116,15 @@ const ClienteLayout: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             
             {/* --- NUEVOS BOTONES DE ACCIÓN RÁPIDA --- */}
-            <Space size="middle">
-                <Tooltip title="Descargar copia de tu póliza">
-                    <Button icon={<DownloadOutlined />} ghost>
-                        Mi Póliza PDF
+            <Space size="small">
+                <Tooltip title="Descargar copia de tu póliza (Solo Activas)">
+                    <Button 
+                        icon={<DownloadOutlined />} 
+                        ghost 
+                        className="action-btn"
+                        onClick={handleDownloadPDF} // <-- CONECTADO
+                    >
+                        <span className="btn-text">Mi Póliza PDF</span>
                     </Button>
                 </Tooltip>
                 
@@ -72,8 +133,9 @@ const ClienteLayout: React.FC = () => {
                     danger 
                     icon={<WarningOutlined />}
                     onClick={() => navigate('/reportar-siniestro')}
+                    className="action-btn"
                 >
-                    Reportar Siniestro
+                    <span className="btn-text">Reportar Siniestro</span>
                 </Button>
             </Space>
             {/* --------------------------------------- */}
