@@ -8,14 +8,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 const { Content } = Layout;
 const { Title, Text } = Typography;
 
-// --- INTERFAZ ACTUALIZADA ---
-// Ahora coincide con 'AgenteEditarClienteSerializer'
+// --- INTERFAZ CORREGIDA ---
 interface ClienteDetalle {
   id: number;
   identificacion: string;
   direccion: string;
   estado_salud: string;
-  usuario: {  // <-- CAMBIO: Antes era 'usuario_info'
+  // CORREGIDO: Usamos 'usuario_info' que es el estándar de tu API
+  usuario_info: {  
     first_name: string;
     last_name: string;
     email: string;
@@ -45,9 +45,7 @@ const AgenteDetalleClientePage: React.FC = () => {
 
         // 2. Cargar Pólizas de este Cliente
         const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
-        
-        // Filtramos las pólizas (Asegúrate de ajustar esto según cómo venga tu API de pólizas)
-        // Si la póliza trae 'cliente_info.id', usamos eso. Si trae 'cliente' (ID plano), usamos eso.
+        // Filtro robusto: revisa ID de cliente directo o anidado
         const misPolizas = resPolizas.data.filter((p: any) => 
             p.cliente === parseInt(id!) || p.cliente_info?.id === parseInt(id!)
         );
@@ -74,9 +72,9 @@ const AgenteDetalleClientePage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} shape="circle" style={{ marginRight: 16 }} />
           <div>
-            <Title level={2} style={{ margin: 0, marginBottom: '15px', fontFamily: 'Michroma, sans-serif' }}>
-                {/* CAMBIO: Usamos cliente.usuario */}
-                {cliente.usuario.first_name} {cliente.usuario.last_name}
+            <Title level={2} style={{ margin: 0 }}>
+                {/* CORREGIDO: usuario_info */}
+                {cliente.usuario_info.first_name} {cliente.usuario_info.last_name}
             </Title>
             <Tag color="blue">Cliente</Tag>
           </div>
@@ -93,13 +91,13 @@ const AgenteDetalleClientePage: React.FC = () => {
                         </div>
                         <div>
                             <Text type="secondary" style={{ fontSize: '12px' }}>EMAIL</Text>
-                            {/* CAMBIO: Usamos cliente.usuario */}
-                            <div style={{ fontSize: '16px' }}><MailOutlined /> {cliente.usuario.email}</div>
+                            {/* CORREGIDO: usuario_info */}
+                            <div style={{ fontSize: '16px' }}><MailOutlined /> {cliente.usuario_info.email}</div>
                         </div>
                         <div>
                             <Text type="secondary" style={{ fontSize: '12px' }}>TELÉFONO</Text>
-                            {/* CAMBIO: Usamos cliente.usuario */}
-                            <div style={{ fontSize: '16px' }}><PhoneOutlined /> {cliente.usuario.telefono || 'N/A'}</div>
+                            {/* CORREGIDO: usuario_info */}
+                            <div style={{ fontSize: '16px' }}><PhoneOutlined /> {cliente.usuario_info.telefono || 'N/A'}</div>
                         </div>
                         <div>
                             <Text type="secondary" style={{ fontSize: '12px' }}>DIRECCIÓN</Text>
@@ -137,7 +135,6 @@ const AgenteDetalleClientePage: React.FC = () => {
                             {
                                 title: 'Acción',
                                 render: (_:any, r:any) => (
-                                    // Aquí puedes redirigir al detalle de póliza si quieres
                                     <Button size="small" onClick={() => navigate(`/agente-polizas/${r.id}`)}>Ver Póliza</Button>
                                 )
                             }

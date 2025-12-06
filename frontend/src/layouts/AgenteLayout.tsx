@@ -15,7 +15,8 @@ import {
   BellOutlined,
   UserOutlined,
   InboxOutlined,
-  DollarOutlined
+  DollarOutlined,
+  AlertOutlined
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -92,6 +93,11 @@ const AgenteLayout: React.FC = () => {
     icon: React.createElement(DollarOutlined),
     label: <Link to="/agente-pagos" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Caja / Pagos</Link>,
     },
+    {
+      key: '6', // O el número que siga
+      icon: React.createElement(AlertOutlined),
+      label: <Link to="/agente-siniestros" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Siniestros</Link>,
+    },
   ];
 
   const getSelectedKey = () => {
@@ -99,6 +105,8 @@ const AgenteLayout: React.FC = () => {
     if (path.startsWith('/agente-solicitudes')) return ['4'];
     if (path.startsWith('/agente-clientes')) return ['2'];
     if (path.startsWith('/agente-polizas')) return ['3'];
+    if (path.startsWith('/agente-pagos')) return ['5'];
+    if (path.startsWith('/agente-siniestros')) return ['6'];
     return ['1'];
   };
 

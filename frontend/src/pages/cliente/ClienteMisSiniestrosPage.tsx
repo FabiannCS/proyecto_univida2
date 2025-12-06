@@ -119,7 +119,7 @@ const ClienteMisSiniestrosPage: React.FC = () => {
         </Button>
       </div>
 
-      <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <Card hoverable style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Table 
             dataSource={siniestros} 
             columns={columns} 

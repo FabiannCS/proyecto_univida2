@@ -5,6 +5,7 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from io import BytesIO
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
@@ -12,8 +13,9 @@ from django.utils import timezone
 from datetime import date, timedelta
 from decimal import Decimal
 from django.db import transaction 
-from django.db.models import Sum
-
+from django.db.models import Sum, Count
+import random
+from datetime import date
 
 import random
 # Modelos
@@ -54,68 +56,92 @@ def lista_clientes(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API para Pólizas
+
+# en seguros/views.py
+from datetime import date, timedelta # Asegúrate de tener timedelta importado
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def lista_polizas(request):
+    # --- GET: LISTAR ---
     if request.method == 'GET':
-        polizas = Poliza.objects.all()
+        polizas = Poliza.objects.all().order_by('-id')
         serializer = PolizaSerializer(polizas, many=True)
         return Response(serializer.data)
-
+    
+    # --- POST: CREAR ---
     elif request.method == 'POST':
         serializer = CrearPolizaSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                with transaction.atomic():
+                    # 1. Generar Número y Guardar Póliza Base
+                    numero_gen = f"POL-{random.randint(10000, 99999)}"
+                    tipo_seguro = request.data.get('tipo_seguro', 'Plan General')
+                    info_extra = f"Plan: {tipo_seguro}. Emitido por Agente."
 
-    if serializer.is_valid():
-        try:
-            # Usamos una transacción para que todo se guarde junto o falle junto
-            with transaction.atomic():
-                # 1. Crear la Póliza (inicialmente en cotización)
-                poliza = serializer.save()
-
-                # 2. Verificar si el Agente marcó "Pago Inmediato"
-                if request.data.get('pago_inmediato') is True:
-
-                    # A. Asignar al Agente actual (si el usuario es agente)
+                    poliza = serializer.save(
+                        numero_poliza=numero_gen,
+                        cobertura=info_extra
+                    )
+                    
+                    # Asignar Agente (siempre que lo crea un agente)
                     if hasattr(request.user, 'agente'):
                         poliza.agente = request.user.agente
 
-                    # B. Generar la Factura automáticamente (Pagada)
-                    factura = Factura.objects.create(
-                        poliza=poliza,
-                        numero_factura=f"FAC-{random.randint(10000, 99999)}",
-                        monto=poliza.prima_anual, 
-                        fecha_emision=date.today(),
-                        fecha_vencimiento=date.today(),
-                        estado='pagada', # Nace pagada
-                        concepto=f"Pago inicial póliza {poliza.numero_poliza}"
-                    )
+                    # 2. Verificar si es PAGO INMEDIATO
+                    if request.data.get('pago_inmediato') is True:
+                        # CASO A: COBRAR AHORA
+                        
+                        # Crear Factura PAGADA
+                        factura = Factura.objects.create(
+                            poliza=poliza,
+                            numero_factura=f"FAC-{random.randint(10000, 99999)}",
+                            monto=poliza.prima_anual, 
+                            fecha_emision=date.today(),
+                            fecha_vencimiento=date.today(),
+                            estado='pagada',
+                            concepto=f"Pago inicial póliza {poliza.numero_poliza}"
+                        )
+                        
+                        # Registrar el Pago
+                        Pago.objects.create(
+                            factura=factura,
+                            monto_pagado=poliza.prima_anual,
+                            metodo_pago=request.data.get('metodo_pago', 'efectivo'),
+                            referencia_pago=request.data.get('referencia_pago', 'Ventanilla'),
+                            estado='completado'
+                        )
+                        
+                        poliza.estado = 'activa'
+                    
+                    else:
+                        # CASO B: COBRAR DESPUÉS (¡ESTO ES LO NUEVO!)
+                        
+                        # Crear Factura PENDIENTE
+                        Factura.objects.create(
+                            poliza=poliza,
+                            numero_factura=f"FAC-{random.randint(10000, 99999)}",
+                            monto=poliza.prima_anual, 
+                            fecha_emision=date.today(),
+                            fecha_vencimiento=date.today() + timedelta(days=30), # 30 días para pagar
+                            estado='pendiente',
+                            concepto=f"Primera prima póliza {poliza.numero_poliza}"
+                        )
+                        
+                        # La póliza pasa a 'pendiente_pago', no 'cotizacion'
+                        # porque ya fue emitida por un agente oficial.
+                        poliza.estado = 'pendiente_pago'
 
-                    # C. Registrar el Pago
-                    Pago.objects.create(
-                        factura=factura,
-                        monto_pagado=poliza.prima_anual,
-                        metodo_pago=request.data.get('metodo_pago', 'efectivo'),
-                        referencia_pago=request.data.get('referencia_pago', 'Pago en ventanilla'),
-                        estado='completado'
-                    )
-
-                    # D. Activar la Póliza
-                    poliza.estado = 'activa'
                     poliza.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-                else:
-                    # Si NO es pago inmediato, se queda como 'cotizacion'
-                    poliza.estado = 'cotizacion'
-                    poliza.save()
-
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            print(f"Error al crear póliza con pago: {e}")
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+            except Exception as e:
+                print(f"ERROR: {e}") 
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated]) # O IsAdminUser según tu lógica
@@ -177,8 +203,45 @@ def lista_beneficiarios(request):
     serializer = BeneficiarioSerializer(beneficiarios, many=True)
     return Response(serializer.data)
 
-# API para una póliza específica
+# en seguros/views.py
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def agregar_beneficiario(request):
+    """
+    Permite agregar un beneficiario a una póliza existente.
+    """
+    # Validar que la póliza exista
+    poliza_id = request.data.get('poliza')
+    try:
+        poliza = Poliza.objects.get(id=poliza_id)
+    except Poliza.DoesNotExist:
+        return Response({'error': 'Póliza no encontrada'}, status=404)
+
+    # (Opcional) Validar que el usuario sea el Agente de esa póliza o un Admin
+    if request.user.rol == 'AGENTE' and poliza.agente.usuario != request.user:
+        return Response({'error': 'No tienes permiso'}, status=403)
+
+    serializer = BeneficiarioSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(poliza=poliza)
+        return Response(serializer.data, status=201)
+    
+    return Response(serializer.errors, status=400)
+
+# Y también una para ELIMINAR beneficiario
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def eliminar_beneficiario(request, beneficiario_id):
+    try:
+        beneficiario = Beneficiario.objects.get(id=beneficiario_id)
+        beneficiario.delete()
+        return Response({'mensaje': 'Eliminado'}, status=204)
+    except Beneficiario.DoesNotExist:
+        return Response({'error': 'No encontrado'}, status=404)
+
+
+# API para una póliza específica
 @api_view(['GET', 'PUT', 'PATCH'])
 def detalle_poliza(request, poliza_id):
     try:
@@ -256,6 +319,20 @@ def lista_facturas(request):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def lista_pagos(request):
+
+    if request.method == 'GET':
+        # Si es Admin o Agente, ve todo (o filtra por factura si quiere)
+        if request.user.rol in ['ADMIN', 'AGENTE']:
+            factura_id = request.query_params.get('factura_id')
+            pagos = Pago.objects.filter(factura_id=factura_id) if factura_id else Pago.objects.all()
+        
+        # Si es CLIENTE, solo ve sus propios pagos
+        elif request.user.rol == 'CLIENTE':
+            # Filtramos pagos donde la factura -> poliza -> cliente -> usuario sea el actual
+            pagos = Pago.objects.filter(factura__poliza__cliente__usuario=request.user)
+            
+        serializer = PagoSerializer(pagos, many=True)
+        return Response(serializer.data)
     """
     Gestión de Pagos. Al crear uno, verifica si la factura se completó.
     """
@@ -470,30 +547,6 @@ def crear_cliente(request):
 
 # API para detalles de cliente
 
-@api_view(['GET', 'PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def detalle_cliente(request, cliente_id):
-    try:
-        cliente = Cliente.objects.get(id=cliente_id)
-    except Cliente.DoesNotExist:
-        return Response({'error': 'Cliente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-    # --- VER (GET) ---
-    if request.method == 'GET':
-        # Usamos el serializer completo para ver todos los datos
-        # (Puedes usar AgenteEditarClienteSerializer aquí también si quieres ver lo mismo que editas)
-        serializer = AgenteEditarClienteSerializer(cliente)
-        return Response(serializer.data)
-
-    # --- EDITAR (PATCH/PUT) ---
-    elif request.method in ['PUT', 'PATCH']:
-        serializer = AgenteEditarClienteSerializer(cliente, data=request.data, partial=True)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API para editar cliente
 @api_view(['PUT', 'PATCH'])
@@ -828,28 +881,30 @@ def crear_cliente(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API para detalles de cliente (ver y editar desde agente)
-@api_view(['GET', 'PUT', 'PATCH'])
+@api_view(['GET', 'PUT', 'PATCH']) # <-- ¡ASEGÚRATE DE QUE ESTÉ ASÍ (SIN #)!
 @permission_classes([IsAuthenticated])
 def detalle_cliente(request, cliente_id):
-    """Obtiene o actualiza un cliente específico.
-
-    Permite a usuarios autenticados (agentes/admins) ver y editar ciertos campos
-    mediante el `AgenteEditarClienteSerializer`.
-    """
     try:
         cliente = Cliente.objects.get(id=cliente_id)
     except Cliente.DoesNotExist:
         return Response({'error': 'Cliente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+    # --- VER (GET) ---
     if request.method == 'GET':
-        serializer = AgenteEditarClienteSerializer(cliente)
+        # Usamos el serializer estándar para VER (tiene usuario_info)
+        serializer = ClienteSerializer(cliente)
         return Response(serializer.data)
 
+    # --- EDITAR (PATCH/PUT) ---
     elif request.method in ['PUT', 'PATCH']:
+        # Usamos el serializer especial para GUARDAR
         serializer = AgenteEditarClienteSerializer(cliente, data=request.data, partial=True)
+        
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            # Devolvemos los datos formateados para lectura
+            return Response(ClienteSerializer(cliente).data)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API para editar cliente
@@ -1002,80 +1057,27 @@ def mi_perfil_agente(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-#API PARA LOS CLIENTES, AL SOLICITAR PÓLIZA
+#Api para que un cliente solicite una póliza con beneficiarios
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def solicitar_poliza(request):
-    """
-    Permite a un cliente solicitar una póliza. 
-    Calcula valores por defecto de forma segura.
-    """
     try:
         cliente = Cliente.objects.get(usuario=request.user)
     except Cliente.DoesNotExist:
-        return Response({'error': 'No tienes un perfil de cliente asociado.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'No tienes perfil de cliente'}, status=400)
 
-    serializer = SolicitarPolizaSerializer(data=request.data)
-    
-    if serializer.is_valid():
-        datos = serializer.validated_data
-        
-        # --- CÁLCULOS SEGUROS ---
-        import random
-        numero_poliza = f"SOL-{random.randint(10000, 99999)}"
-        
-        inicio = date.today()
-        fin = inicio + timedelta(days=365)
-        
-        # Convertimos a Decimal para evitar errores matemáticos
-        # (El frontend envía float o int, nosotros lo forzamos a Decimal)
-        suma = Decimal(str(datos['suma_asegurada'])) 
-        porcentaje = Decimal('0.02') # 2%
-        
-        # Calculamos la prima anual
-        prima_estimada = suma * porcentaje
-        
-        # Calculamos la prima mensual (para evitar que el modelo falle al intentar dividir)
-        prima_mensual_estimada = prima_estimada / Decimal('12')
+    # --- VALIDACIÓN CORREGIDA ---
+    # Solo impedimos crear si tiene una póliza 'VIVA'
+    poliza_activa = Poliza.objects.filter(
+        cliente=cliente, 
+        # Estados que BLOQUEAN una nueva solicitud
+        estado__in=['cotizacion', 'pendiente_pago', 'activa'] 
+    ).exists()
 
-        info_extra = f"Tipo: {datos['tipo_seguro']}. Obs: {datos.get('observaciones', '')}"
-
-        try:
-            poliza = Poliza.objects.create(
-                cliente=cliente,
-                numero_poliza=numero_poliza,
-                suma_asegurada=suma,
-                prima_anual=prima_estimada,
-                prima_mensual=prima_mensual_estimada, # <-- Pasamos el valor calculado
-                fecha_inicio=inicio,
-                fecha_vencimiento=fin,
-                estado='cotizacion',
-                cobertura=info_extra
-            )
-            return Response({
-                'mensaje': 'Solicitud recibida correctamente',
-                'id': poliza.id,
-                'numero': poliza.numero_poliza
-            }, status=status.HTTP_201_CREATED)
-            
-        except Exception as e:
-            # Esto imprimirá el error real en tu terminal de Django (la negra)
-            print(f"ERROR AL GUARDAR PÓLIZA: {str(e)}") 
-            return Response({'error': f'Error interno: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def solicitar_poliza(request):
-    """
-    Permite a un cliente solicitar una póliza con beneficiarios detallados.
-    """
-    try:
-        cliente = Cliente.objects.get(usuario=request.user)
-    except Cliente.DoesNotExist:
-        return Response({'error': 'No tienes un perfil de cliente asociado.'}, status=status.HTTP_400_BAD_REQUEST)
+    if poliza_activa:
+        return Response({
+            'error': 'Ya tienes un trámite en curso o una póliza activa. Debes terminar ese proceso antes de solicitar otra.'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = SolicitarPolizaSerializer(data=request.data)
     
@@ -1230,3 +1232,47 @@ def toggle_estado_cliente(request, cliente_id):
         mensaje = 'Cliente reactivado exitosamente.'
 
     return Response({'mensaje': mensaje, 'is_active': usuario.is_active})
+
+
+# en seguros/views.py
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def agente_dashboard_stats(request):
+    """
+    Devuelve las estadísticas clave para el dashboard del agente.
+    """
+    try:
+        # Verificar que sea agente
+        agente = Agente.objects.get(usuario=request.user)
+    except Agente.DoesNotExist:
+        return Response({'error': 'No eres un agente'}, status=403)
+
+    # 1. Total Clientes (Usuarios únicos con pólizas de este agente o asignados)
+    # Una forma simple es contar las pólizas únicas, o si tienes relación directa en Cliente.
+    # Usaremos las pólizas para saber cuántos clientes activos tiene.
+    total_clientes = Poliza.objects.filter(agente=agente).values('cliente').distinct().count()
+
+    # 2. Pólizas Vendidas (Activas)
+    polizas_activas = Poliza.objects.filter(agente=agente, estado='activa').count()
+
+    # 3. Solicitudes Pendientes (En cotización, sin agente o asignadas a él)
+    # (Aquí asumimos que el agente ve todas las cotizaciones como "oportunidad" o solo las suyas)
+    solicitudes_pendientes = Poliza.objects.filter(estado='cotizacion').count()
+
+    # 4. Ventas del Mes (Suma de primas de pólizas creadas este mes)
+    hoy = timezone.now()
+    ventas_mes = Poliza.objects.filter(
+        agente=agente,
+        estado='activa',
+        creado_en__month=hoy.month,
+        creado_en__year=hoy.year
+    ).aggregate(total=Sum('prima_anual'))['total'] or 0
+
+    data = {
+        'total_clientes': total_clientes,
+        'polizas_activas': polizas_activas,
+        'solicitudes_pendientes': solicitudes_pendientes,
+        'ventas_mes': ventas_mes
+    }
+    
+    return Response(data)

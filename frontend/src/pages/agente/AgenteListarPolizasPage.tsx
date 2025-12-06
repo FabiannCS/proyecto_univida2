@@ -91,18 +91,16 @@ const AgenteListarPolizasPage: React.FC = () => {
             <Space>
                 <Tooltip title="Ver Detalles Completos">
                     <Button 
-                        size="small" 
                         icon={<EyeOutlined />} 
                         onClick={() => navigate(`/agente-polizas/${record.id}`)}
                     >
-                      Ver Detalles
+                      Ver detalles / Editar
                     </Button>
                 </Tooltip>
-                
                 {/* Botón Inactivar solo si está activa o pendiente */}
                 {(record.estado === 'activa' || record.estado === 'pendiente_pago') && (
-                    <Popconfirm title="¿Inactivar esta póliza?" onConfirm={() => handleInactivar(record.id)}>
-                        <Button size="small" danger icon={<StopOutlined />}>Inactivar</Button>
+                    <Popconfirm title="¿Desactivar esta póliza?" onConfirm={() => handleInactivar(record.id)}>
+                        <Button danger icon={<StopOutlined />}>Eliminar</Button>
                     </Popconfirm>
                 )}
             </Space>

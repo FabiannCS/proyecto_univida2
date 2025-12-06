@@ -41,6 +41,10 @@ import ClienteMisSiniestrosPage from './pages/cliente/ClienteMisSiniestrosPage';
 import AgenteRegistrarPagoPage from './pages/agente/AgenteRegistrarPagoPage';
 import AgenteDetallePolizaPage from './pages/agente/AgenteDetallePolizaPage';
 import AgenteDetalleClientePage from './pages/agente/AgenteDetalleClientePage';
+import AgenteListarSiniestrosPage from './pages/agente/AgenteListarSiniestrosPage';
+import ClientePagarPolizaPage from './pages/cliente/ClientePagarPolizaPage';
+import AgenteDetalleSiniestroPage from './pages/agente/AgenteDetalleSiniestroPage';
+import AgenteReportarSiniestroPage from './pages/agente/AgenteReportarSiniestroPage';
 
 // Páginas Cliente
 import ClienteDashboardPage from './pages/cliente/ClienteDashboardPage';
@@ -99,6 +103,7 @@ function App() {
             <Route path="/catalogo" element={<ClienteCatalogoPage />} />
             <Route path="/reportar-siniestro" element={<ClienteReportarSiniestroPage />} />
             <Route path="/mis-siniestros" element={<ClienteMisSiniestrosPage />} />
+            <Route path="/pagar-poliza" element={<ClientePagarPolizaPage />} />
           </Route>
         </Route>
 
@@ -117,6 +122,9 @@ function App() {
               <Route path="agente-polizas/crear" element={<AgenteCrearPolizaPage />} />
               <Route path="agente-polizas/:id" element={<AgenteDetallePolizaPage />} />
               <Route path="agente-pagos" element={<AgenteRegistrarPagoPage />} />
+              <Route path="agente-siniestros" element={<AgenteListarSiniestrosPage />} />
+              <Route path="agente-siniestros/:id" element={<AgenteDetalleSiniestroPage />} />
+              <Route path="agente-siniestros/crear" element={<AgenteReportarSiniestroPage />} />
               
            </Route>
         </Route>

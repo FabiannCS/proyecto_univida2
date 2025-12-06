@@ -21,46 +21,109 @@ class BeneficiarioSerializer(serializers.ModelSerializer):
         model = Beneficiario
         fields = ['id', 'nombre_completo', 'parentesco', 'porcentaje', 'fecha_nacimiento']
 
+class InfoAgenteSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='usuario.first_name')
+    last_name = serializers.CharField(source='usuario.last_name')
+    email = serializers.EmailField(source='usuario.email')
+    telefono = serializers.CharField(source='usuario.telefono')
+
+    class Meta:
+        model = Agente
+        fields = ['first_name', 'last_name', 'email', 'telefono']
+
+
 class PolizaSerializer(serializers.ModelSerializer):
     cliente_info = ClienteSerializer(source='cliente', read_only=True)
     beneficiarios = BeneficiarioSerializer(many=True, read_only=True)
+
+    agente_info = InfoAgenteSerializer(source='agente', read_only=True)
     
     class Meta:
         model = Poliza
         fields = [
-            'id', 'numero_poliza', 'cliente_info', 'suma_asegurada', 
+            'id', 'numero_poliza', 'cliente_info', 'agente_info', 'suma_asegurada', 
             'prima_anual', 'prima_mensual', 'fecha_inicio', 'fecha_vencimiento',  # ← AÑADIDO prima_mensual
             'estado', 'beneficiarios', 'creado_en', 'cobertura'  # ← AÑADIDO cobertura, QUITADO exclusiones
         ]
 
+class BeneficiarioInputSerializer(serializers.Serializer):
+    nombre_completo = serializers.CharField()
+    paterno = serializers.CharField(required=False, allow_blank=True) # Nuevo
+    materno = serializers.CharField(required=False, allow_blank=True) # Nuevo
+    parentesco = serializers.CharField()
+    porcentaje = serializers.DecimalField(max_digits=5, decimal_places=2)
+    fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
+    ci = serializers.CharField(required=False, allow_blank=True)
+    telefono = serializers.CharField(required=False, allow_blank=True) # Nuevo
+
+class SolicitarPolizaSerializer(serializers.ModelSerializer):
+    tipo_seguro = serializers.CharField(write_only=True)
+    observaciones = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    
+    # Campo de lista para recibir múltiples beneficiarios
+    beneficiarios = BeneficiarioInputSerializer(many=True, write_only=True)
+
+    class Meta:
+        model = Poliza
+        fields = ['suma_asegurada', 'tipo_seguro', 'observaciones', 'beneficiarios']
+
+
 # En seguros/serializers.py - ACTUALIZAR
+# en seguros/serializers.py
+
 class CrearPolizaSerializer(serializers.ModelSerializer):
+    # 1. Campos extra que recibe el formulario pero no van directos al modelo
+    tipo_seguro = serializers.CharField(write_only=True, required=False)
+    observaciones = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    beneficiarios = BeneficiarioInputSerializer(many=True, write_only=True)
+
     class Meta:
         model = Poliza
         fields = [
             'cliente', 'agente', 'numero_poliza', 'suma_asegurada',
             'prima_anual', 'prima_mensual', 'fecha_inicio', 
-            'fecha_vencimiento', 'cobertura', 'estado'
+            'fecha_vencimiento', 'cobertura', 'estado',
+            # Incluimos los campos extra en la lista de campos aceptados
+            'tipo_seguro', 'observaciones', 'beneficiarios'
         ]
+        # Campos que calcula el sistema, no el usuario
+        read_only_fields = ['numero_poliza', 'prima_mensual', 'cobertura', 'estado']
         extra_kwargs = {
-            'agente': {'required': False, 'allow_null': True}  # ← Hacer opcional
+            'agente': {'required': False, 'allow_null': True}
         }
     
+    # --- 2. MÉTODO DE VALIDACIÓN (MANTENERLO) ---
     def validate(self, data):
-        """Validaciones para crear pólizas"""
-        # Validar que la fecha de vencimiento sea después de la fecha de inicio
-        if data['fecha_inicio'] >= data['fecha_vencimiento']:
-            raise serializers.ValidationError({
-                'fecha_vencimiento': 'La fecha de vencimiento debe ser posterior a la fecha de inicio'
-            })
+        """Validaciones de lógica de negocio"""
+        # Validar fechas
+        if data.get('fecha_inicio') and data.get('fecha_vencimiento'):
+            if data['fecha_inicio'] >= data['fecha_vencimiento']:
+                raise serializers.ValidationError({
+                    'fecha_vencimiento': 'La fecha de vencimiento debe ser posterior a la fecha de inicio'
+                })
         
-        # Validar que la suma asegurada sea positiva
-        if data['suma_asegurada'] <= 0:
+        # Validar monto positivo
+        if data.get('suma_asegurada') and data['suma_asegurada'] <= 0:
             raise serializers.ValidationError({
                 'suma_asegurada': 'La suma asegurada debe ser mayor a 0'
             })
         
         return data
+
+    # --- 3. MÉTODO DE CREACIÓN (LIMPIEZA DE DATOS) ---
+    def create(self, validated_data):
+        """
+        Elimina los campos que no pertenecen al modelo Poliza antes de guardar.
+        """
+        # Sacamos (pop) los datos que no son columnas de la tabla Poliza
+        # (Nota: La vista 'lista_polizas' debería haber usado estos datos antes, 
+        # aquí solo aseguramos que no rompan el guardado automático)
+        validated_data.pop('tipo_seguro', None)
+        validated_data.pop('observaciones', None)
+        validated_data.pop('beneficiarios', None)
+        
+        # Llamamos al método original para crear la Poliza limpia
+        return super().create(validated_data)
 
 class AgenteProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -106,11 +169,12 @@ class UsuarioAgenteSerializer(serializers.ModelSerializer):
 #PARA FACTURAS Y PAGOS
 class FacturaSerializer(serializers.ModelSerializer):
     # Incluimos info básica de la póliza para mostrarla en el frontend
+    poliza_info = PolizaSerializer(source='poliza', read_only=True)
     poliza_numero = serializers.CharField(source='poliza.numero_poliza', read_only=True)
     
     class Meta:
         model = Factura
-        fields = ['id', 'poliza', 'poliza_numero', 'numero_factura', 'monto', 
+        fields = ['id', 'poliza', 'poliza_info', 'poliza_numero', 'numero_factura', 'monto', 
                   'fecha_emision', 'fecha_vencimiento', 'estado', 'concepto']
 
 class CrearFacturaSerializer(serializers.ModelSerializer):
@@ -356,30 +420,6 @@ class SolicitarPolizaSerializer(serializers.ModelSerializer):
         model = Poliza
         # Solo pedimos la suma asegurada. El resto lo calculamos en la vista.
         fields = ['suma_asegurada', 'tipo_seguro', 'observaciones']
-
-
-
-# Serializer auxiliar para validar los datos de entrada de los beneficiarios
-class BeneficiarioInputSerializer(serializers.Serializer):
-    nombre_completo = serializers.CharField()
-    paterno = serializers.CharField(required=False, allow_blank=True) # Nuevo
-    materno = serializers.CharField(required=False, allow_blank=True) # Nuevo
-    parentesco = serializers.CharField()
-    porcentaje = serializers.DecimalField(max_digits=5, decimal_places=2)
-    fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
-    ci = serializers.CharField(required=False, allow_blank=True)
-    telefono = serializers.CharField(required=False, allow_blank=True) # Nuevo
-
-class SolicitarPolizaSerializer(serializers.ModelSerializer):
-    tipo_seguro = serializers.CharField(write_only=True)
-    observaciones = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    
-    # Campo de lista para recibir múltiples beneficiarios
-    beneficiarios = BeneficiarioInputSerializer(many=True, write_only=True)
-
-    class Meta:
-        model = Poliza
-        fields = ['suma_asegurada', 'tipo_seguro', 'observaciones', 'beneficiarios']
 
 
 

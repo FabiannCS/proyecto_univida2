@@ -1,189 +1,187 @@
-import React from 'react';
-import { Layout, Button, Typography, Dropdown, Avatar, Space, Tooltip, message,} from 'antd';
-import { LogoutOutlined, UserOutlined, DownOutlined, WarningOutlined, DownloadOutlined} from '@ant-design/icons';
-import { Outlet, useNavigate} from 'react-router-dom';
+// en frontend/src/layouts/ClienteLayout.tsx
+import React, { useState } from 'react';
+import { Layout, Button, Typography, Dropdown, Avatar, Space, Tooltip, Modal, Divider, Collapse, message } from 'antd';
+import { 
+    LogoutOutlined, UserOutlined, DownOutlined, WarningOutlined, DownloadOutlined, 
+    QuestionCircleOutlined, PhoneOutlined, MailOutlined 
+} from '@ant-design/icons';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
-
+import { jwtDecode } from "jwt-decode";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
+const { Panel } = Collapse;
 
 const ClienteLayout: React.FC = () => {
   const navigate = useNavigate();
   const userName = authService.getFullName() || 'Cliente';
-  const [actionLoading, setActionLoading] = React.useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false); // <-- Estado para el Modal Global
 
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
   };
 
-  const userMenu = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'Mi Perfil',
-      onClick: () => navigate('/cliente-perfil'), // <-- Redirige a la nueva ruta
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Cerrar Sesión',
-      danger: true,
-      onClick: handleLogout,
-    },
-  ];
- const handleDownloadPDF = async () => {
-    console.log("1. Botón PDF presionado"); // <-- Debug
+// --- FUNCIÓN DE DESCARGA DE PDF ---
+  const handleDownloadPDF = async () => {
     try {
         const token = localStorage.getItem('accessToken');
         if (!token) return;
-
+        
         const headers = { Authorization: `Bearer ${token}` };
         
-        // ... (código de decodificar token) ...
+        // 1. Identificar al usuario
         const decodedToken: any = jwtDecode(token);
         const miUsername = decodedToken.username;
 
-        console.log("2. Buscando pólizas..."); // <-- Debug
+        // 2. Buscar la póliza del usuario
+        // (Hacemos esto aquí porque el Layout no sabe qué póliza se está viendo en el Dashboard)
         const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
-        
         const miPoliza = resPolizas.data.find((p: any) => 
             p.cliente_info?.usuario_info?.username === miUsername &&
             p.estado !== 'cancelada'
         );
 
         if (!miPoliza) {
-            window.alert("No tienes pólizas registradas.");
+            message.warning("No se encontró ninguna póliza activa para descargar.");
             return;
         }
 
-        console.log("3. Póliza encontrada, estado:", miPoliza.estado); // <-- Debug clave
-
-        // --- VALIDACIÓN ---
+        // 3. Validar estado
         if (miPoliza.estado !== 'activa') {
-            window.alert("AVISO: Tu póliza aún está en revisión ('" + miPoliza.estado + "'). Solo se pueden descargar pólizas ACTIVAS.");
+            message.warning(`Tu póliza está en estado: ${miPoliza.estado.toUpperCase()}. Solo se pueden descargar pólizas ACTIVAS.`);
             return; 
         }
-        // ------------------
 
-        console.log("4. Iniciando descarga..."); // <-- Debug
         message.loading({ content: 'Generando documento oficial...', key: 'pdfDownload' });
 
-        // Esta llamada fallará si no hicimos el backend
+        // 4. Descargar PDF
         const response = await axios.get(`http://127.0.0.1:8000/api/polizas/${miPoliza.id}/pdf/`, {
             headers,
-            responseType: 'blob',
+            responseType: 'blob', // Importante para archivos
         });
-        
-        // ... (código de descarga del blob) ...
 
-        message.success({ content: 'Póliza descargada', key: 'pdfDownload' });
+        // 5. Crear enlace temporal para descargar
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Poliza_${miPoliza.numero_poliza}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+
+        message.success({ content: 'Póliza descargada correctamente', key: 'pdfDownload' });
 
     } catch (error) {
-        console.error("Error en PDF:", error);
-        window.alert("ERROR: No se pudo descargar el PDF. (Probablemente falta el backend)");
+        console.error(error);
+        message.error({ content: 'Error al descargar el PDF. Verifica la conexión.', key: 'pdfDownload' });
     }
   };
 
+  const userMenu = [
+    // --- ESTO ES LO QUE FALTA O SE BORRÓ ---
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Mi Perfil',
+      onClick: () => navigate('/cliente-perfil'), // <-- Esta es la ruta clave
+    },
+    { key: 'logout', icon: <LogoutOutlined />, label: 'Cerrar Sesión', danger: true, onClick: handleLogout },
+    
+  ];
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* Barra Superior */}
-        <Header style={{ 
-            background: '#001529', 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            padding: '0 16px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            // --- PROPIEDADES PARA HACERLO FIJO ---
-            position: 'sticky',
-            top: 0,
-            zIndex: 1000, // Un zIndex alto para que flote sobre todo
-            width: '100%',
-            // -------------------------------------
-        }}>
-        {/* 1. Logo / Título */}
+      <Header style={{ 
+        background: '#001529', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        position: 'sticky', top: 0, zIndex: 1000, width: '100%'
+      }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Title level={4} style={{ color: 'white', margin: 0, fontFamily: "'Michroma', sans-serif" }}>
-                SegurosUnivida
-            </Title>
+            <Title level={4} style={{ color: 'white', margin: 0, fontFamily: "'Michroma', sans-serif", fontSize: '1.1rem' }}>SegurosUnivida</Title>
         </div>
 
-        {/* 2. SECCIÓN DERECHA: Acciones y Perfil */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            
-            {/* --- NUEVOS BOTONES DE ACCIÓN RÁPIDA --- */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Space size="small">
-                <Tooltip title="Descargar copia de tu póliza (Solo Activas)">
+                {/* --- NUEVO BOTÓN DE AYUDA --- */}
+                <Tooltip title="Centro de Ayuda">
                     <Button 
-                        icon={<DownloadOutlined />} 
+                        icon={<QuestionCircleOutlined />} 
                         ghost 
+                        onClick={() => setIsHelpOpen(true)}
                         className="action-btn"
-                        onClick={handleDownloadPDF} // <-- CONECTADO
                     >
-                        <span className="btn-text">Mi Póliza PDF</span>
+                        <span className="btn-text">Ayuda</span>
+                    </Button>
+                </Tooltip>
+
+                <Tooltip title="Descargar copia de tu póliza">
+                    <Button icon={<DownloadOutlined />} ghost className="action-btn" onClick={handleDownloadPDF}>
+                        <span className="btn-text">Mi Póliza</span>
                     </Button>
                 </Tooltip>
                 
-                <Button 
-                    type="primary" 
-                    danger 
-                    icon={<WarningOutlined />}
-                    onClick={() => navigate('/reportar-siniestro')}
-                    className="action-btn"
-                >
+                <Button type="primary" danger icon={<WarningOutlined />} onClick={() => navigate('/reportar-siniestro')} className="action-btn">
                     <span className="btn-text">Reportar Siniestro</span>
                 </Button>
             </Space>
-            {/* --------------------------------------- */}
 
-            {/* Separador visual (opcional) */}
             <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)' }} />
 
-            {/* 3. Perfil del Usuario */}
             <Dropdown menu={{ items: userMenu }} trigger={['click']}>
-            <div style={{ cursor: 'pointer', color: 'white' }}>
-                <Space>
+            <div style={{ cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center' }}>
+                <Space size="small">
                 <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
                 <span className="user-name-responsive" style={{ fontWeight: 500 }}>{userName}</span>
-                <DownOutlined />
+                <DownOutlined style={{ fontSize: '12px' }} />
                 </Space>
             </div>
             </Dropdown>
         </div>
       </Header>
 
-      {/* Contenido */}
-      <Content style={{ padding: '24px 50px', marginTop: 16 }}>
-        <div style={{ 
-            background: '#fff', 
-            padding: 24, 
-            minHeight: '80vh', 
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
+      <Content style={{ padding: '24px', marginTop: 0 }}>
+        <div style={{ background: '#fff', padding: 24, minHeight: '80vh', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <Outlet />
         </div>
       </Content>
 
-      {/* Estilos Responsivos */}
+      {/* --- MODAL DE AYUDA GLOBAL --- */}
+      <Modal
+        title="Centro de Ayuda"
+        open={isHelpOpen}
+        onCancel={() => setIsHelpOpen(false)}
+        footer={[<Button key="close" onClick={() => setIsHelpOpen(false)}>Cerrar</Button>]}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <QuestionCircleOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: 16 }} />
+            <p>¿Cómo podemos ayudarte hoy?</p>
+        </div>
+        <Title level={5}>Contacto de Emergencia</Title>
+        <p><PhoneOutlined /> Línea Gratuita: <strong>800-10-20-30</strong></p>
+        <p><MailOutlined /> Soporte: <strong>soporte@univida.com</strong></p>
+        <Divider />
+        <Title level={5}>Preguntas Frecuentes</Title>
+        <Collapse accordion ghost>
+            <Panel header="¿Cómo reporto un siniestro?" key="1">
+                <p>Ve al botón rojo "Reportar Siniestro" en la barra superior, llena el formulario y adjunta la documentación requerida.</p>
+            </Panel>
+            <Panel header="¿Dónde veo mis pagos?" key="2">
+                <p>En tu dashboard principal, debajo de la información de tu póliza, encontrarás la sección "Historial de Pagos".</p>
+            </Panel>
+        </Collapse>
+      </Modal>
+
       <style>{`
         @media (max-width: 768px) {
-          .user-name-responsive {
-            display: none;
-          }
-        }
-        @media (min-width: 769px) {
-          .user-name-responsive {
-            display: inline;
-          }
+            .user-name-responsive { display: none; }
+            .btn-text { display: none; }
+            .action-btn { padding: 4px 8px; }
         }
       `}</style>
     </Layout>
   );
 };
-
 export default ClienteLayout;

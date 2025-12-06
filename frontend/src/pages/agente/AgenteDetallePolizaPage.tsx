@@ -1,7 +1,7 @@
 // en frontend/src/pages/agente/AgenteDetallePolizaPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Descriptions, Card, Table, Tag, Button, Spin, message, Row, Col, Divider } from 'antd';
-import { ArrowLeftOutlined, FileTextOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
+import { Layout, Typography, Descriptions, Card, Table, Tag, Button, Spin, message, Row, Col, Divider, Popconfirm, Modal, Form, Input, InputNumber, } from 'antd';
+import { ArrowLeftOutlined, FileTextOutlined, UserOutlined, DollarOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -14,6 +14,8 @@ const AgenteDetallePolizaPage: React.FC = () => {
   const [poliza, setPoliza] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pagos, setPagos] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
 
   const getToken = () => localStorage.getItem('accessToken');
 
@@ -43,6 +45,41 @@ const AgenteDetallePolizaPage: React.FC = () => {
     };
     fetchData();
   }, [id]);
+
+  const handleAddBeneficiario = async (values: any) => {
+    try {
+        const token = getToken();
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        await axios.post('http://127.0.0.1:8000/api/beneficiarios/agregar/', {
+            ...values,
+            poliza: id // El ID de la póliza actual
+        }, { headers });
+
+        message.success('Beneficiario agregado');
+        setIsModalOpen(false);
+        form.resetFields();
+        // Recargar datos para ver el nuevo beneficiario
+        // (Podrías extraer fetchData afuera del useEffect para llamarlo aquí)
+        window.location.reload(); 
+
+    } catch (error) {
+        message.error('Error al agregar beneficiario');
+    }
+  };
+
+  // --- NUEVA FUNCIÓN: ELIMINAR BENEFICIARIO ---
+  const handleDeleteBeneficiario = async (benId: number) => {
+      try {
+        const token = getToken();
+        const headers = { Authorization: `Bearer ${token}` };
+        await axios.delete(`http://127.0.0.1:8000/api/beneficiarios/${benId}/eliminar/`, { headers });
+        message.success('Beneficiario eliminado');
+        window.location.reload();
+      } catch (error) {
+          message.error('Error al eliminar');
+      }
+  };
 
   if (loading) return <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>;
   if (!poliza) return <div style={{ textAlign: 'center', padding: 50 }}>Póliza no encontrada</div>;
@@ -75,7 +112,15 @@ const AgenteDetallePolizaPage: React.FC = () => {
                     </Descriptions>
                 </Card>
 
-                <Card title="Beneficiarios">
+                {/* --- CARD BENEFICIARIOS CON BOTÓN --- */}
+                <Card 
+                    title="Beneficiarios" 
+                    extra={
+                        <Button style={{fontFamily: 'Michroma, sans-serif'}} type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+                            Añadir
+                        </Button>
+                    }
+                >
                     <Table 
                         dataSource={poliza.beneficiarios}
                         rowKey="id"
@@ -83,7 +128,15 @@ const AgenteDetallePolizaPage: React.FC = () => {
                         columns={[
                             { title: 'Nombre', dataIndex: 'nombre_completo' },
                             { title: 'Parentesco', dataIndex: 'parentesco' },
-                            { title: 'Porcentaje', dataIndex: 'porcentaje', render: (v:any) => `${v}%` }
+                            { title: '%', dataIndex: 'porcentaje', render: (v:any) => `${v}%` },
+                            { 
+                                title: 'Acción', 
+                                render: (_:any, r:any) => (
+                                    <Popconfirm title="¿Eliminar?" onConfirm={() => handleDeleteBeneficiario(r.id)}>
+                                        <Button danger icon={<DeleteOutlined />} >Eliminar</Button>
+                                    </Popconfirm>
+                                )
+                            }
                         ]}
                     />
                 </Card>
@@ -116,6 +169,28 @@ const AgenteDetallePolizaPage: React.FC = () => {
                 </Card>
             </Col>
         </Row>
+        {/* --- MODAL PARA AÑADIR --- */}
+        <Modal title="Añadir Beneficiario" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null}>
+            <Form form={form} layout="vertical" onFinish={handleAddBeneficiario}>
+                <Form.Item name="nombre_completo" label="Nombre Completo" rules={[{ required: true }]}>
+                    <Input />
+                </Form.Item>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <Form.Item name="parentesco" label="Parentesco" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                        <Form.Item name="porcentaje" label="Porcentaje %" rules={[{ required: true }]}>
+                            <InputNumber min={1} max={100} style={{ width: '100%' }} />
+                        </Form.Item>
+                    </Col>
+                </Row>
+                {/* Añade campos de CI, Materno, Paterno si los necesitas aquí también */}
+                <Button type="primary" htmlType="submit" block>Guardar</Button>
+            </Form>
+        </Modal>
 
       </Content>
     </Layout>
