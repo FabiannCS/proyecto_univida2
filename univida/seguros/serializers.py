@@ -139,13 +139,15 @@ class AgenteSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='usuario.last_name', read_only=True)
     rol = serializers.CharField(source='usuario.rol', read_only=True)
     usuario_id = serializers.IntegerField(source='usuario.id', read_only=True)  # ← AÑADIR esto
+
+    is_active = serializers.BooleanField(source='usuario.is_active', read_only=True)
     
     class Meta:
         model = Agente
         fields = [
             'id', 'usuario_id', 'usuario', 'codigo_agente', 'fecha_contratacion',  # ← Incluir 'id' real del agente
             'especialidad', 'comision', 'estado', 
-            'username', 'email', 'first_name', 'last_name', 'rol'
+            'username', 'email', 'first_name', 'last_name', 'rol', 'is_active'
         ]
         read_only_fields = ['usuario']
 
@@ -182,10 +184,24 @@ class CrearFacturaSerializer(serializers.ModelSerializer):
         model = Factura
         fields = ['poliza', 'numero_factura', 'monto', 'fecha_emision', 'fecha_vencimiento', 'concepto']
 
+# en seguros/serializers.py
+
 class PagoSerializer(serializers.ModelSerializer):
+    # Esto trae los datos anidados de la factura (y la póliza/cliente dentro de ella)
+    factura_info = FacturaSerializer(source='factura', read_only=True)
+    
     class Meta:
         model = Pago
-        fields = ['id', 'factura', 'monto_pagado', 'fecha_pago', 'metodo_pago', 'referencia_pago', 'descripcion']
+        fields = [
+            'id', 
+            'factura_info',  # <--- ¡ASEGÚRATE DE QUE ESTE ESTÉ AQUÍ!
+            'monto_pagado', 
+            'fecha_pago',
+            'metodo_pago', 
+            'referencia_pago', 
+            'estado', 
+            'descripcion'
+        ]
 
 class CrearPagoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -208,8 +224,10 @@ class SiniestroSerializer(serializers.ModelSerializer):
 class CrearSiniestroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Siniestro
+        # NO incluyas 'numero_siniestro', 'fecha_reporte' ni 'estado' aquí, 
+        # o asegúrate de que sean read_only si usas 'fields = __all__'
         fields = [
-            'poliza', 'numero_siniestro', 'tipo_siniestro', 'fecha_siniestro',
+            'poliza', 'tipo_siniestro', 'fecha_siniestro',
             'descripcion', 'monto_reclamado', 'documentos_adjuntos'
         ]
 

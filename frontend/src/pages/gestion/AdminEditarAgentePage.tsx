@@ -70,6 +70,7 @@ const AdminEditarAgentePage: React.FC = () => {
             const headers = { Authorization: `Bearer ${token}` };
 
             // CORRECCIÓN: Usamos PATCH en lugar de PUT
+            // En tu código veo esto:
             await axios.patch(`http://127.0.0.1:8000/api/agentes/${id}/editar/`, values, { headers });
             
             message.success('Agente actualizado exitosamente.');

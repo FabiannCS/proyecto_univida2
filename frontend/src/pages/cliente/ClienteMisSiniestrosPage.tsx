@@ -104,7 +104,19 @@ const ClienteMisSiniestrosPage: React.FC = () => {
       dataIndex: 'monto_reclamado',
       key: 'monto',
       render: (val: string) => `$${parseFloat(val).toLocaleString()}`
-    }
+    },
+    {
+      title: 'Acciones',
+      key: 'acciones',
+      render: (_: any, record: any) => (
+        <Button 
+            size="small" 
+            onClick={() => navigate(`/mis-siniestros/${record.id}`)} // <-- REDIRIGE AL DETALLE
+        >
+            Ver Detalle
+        </Button>
+      ),
+    },
   ];
 
   return (

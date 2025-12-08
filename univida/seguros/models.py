@@ -31,6 +31,16 @@ class Cliente(models.Model):
     identificacion = models.CharField(max_length=20, unique=True)
     estado_salud = models.CharField(max_length=100, default='Bueno')
     
+    # --- ¡ESTE ES EL CAMPO QUE FALTA! ---
+    agente = models.ForeignKey(
+        'Agente', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='clientes_asignados'
+    )
+    # ------------------------------------
+
     def __str__(self):
         return f"{self.usuario.get_full_name()}"
     

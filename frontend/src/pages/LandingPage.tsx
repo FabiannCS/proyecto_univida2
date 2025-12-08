@@ -1,7 +1,7 @@
 // en frontend/src/pages/LandingPage.tsx
 import React from 'react';
 import { Layout, Typography, Button, Row, Col, Card, Space, Steps, Divider, List, Collapse, Avatar, Carousel, Statistic } from 'antd';
-import { LoginOutlined, SafetyCertificateOutlined, HeartOutlined, DollarOutlined, CheckCircleOutlined, SolutionOutlined, FileProtectOutlined, SmileOutlined, UserOutlined, QuestionCircleOutlined, TrophyOutlined, TeamOutlined } from '@ant-design/icons';
+import { LoginOutlined, SafetyCertificateOutlined, CrownOutlined, CheckCircleOutlined, SolutionOutlined, FileProtectOutlined, SmileOutlined, UserOutlined, QuestionCircleOutlined, TrophyOutlined, TeamOutlined, RocketOutlined} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 const { Header, Content, Footer } = Layout;
@@ -88,7 +88,7 @@ const LandingPage: React.FC = () => {
 
         {/* --- 3. CÓMO FUNCIONA --- */}
         <div style={{ padding: '100px 50px', background: '#f9f9f9' }}>
-            <Title level={2} style={{ textAlign: 'center', marginBottom: '60px' }}>¿Cómo asegurar tu futuro?</Title>
+            <Title level={2} style={{ textAlign: 'center', marginBottom: '60px', fontFamily: 'Michroma, sans-serif'}}>¿Cómo asegurar tu futuro?</Title>
             <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 <Steps
                     current={-1}
@@ -103,12 +103,12 @@ const LandingPage: React.FC = () => {
 
         {/* --- 4. PLANES (Cards con Efecto Hover) --- */}
         <div style={{ padding: '100px 20px', maxWidth: '1200px', margin: '0 auto' }}>
-          <Title level={2} style={{ textAlign: 'center', marginBottom: '60px' }}>Nuestros Planes Destacados</Title>
+          <Title level={2} style={{ textAlign: 'center', marginBottom: '60px', fontFamily: 'Michroma, sans-serif' }}>Nuestros Planes Destacados</Title>
           <Row gutter={[32, 32]}>
             {[
-                { title: "Básico", price: "$20/mes", color: '#1890ff', icon: <SafetyCertificateOutlined />, features: ["Cobertura por fallecimiento", "Asistencia funeraria"] },
-                { title: "Familiar", price: "$45/mes", color: '#eb2f96', icon: <HeartOutlined />, features: ["Cobertura ampliada", "Invalidez total", "Renta hospitalaria"] },
-                { title: "Premium", price: "$80/mes", color: '#52c41a', icon: <DollarOutlined />, features: ["Cobertura total", "Enfermedades graves", "Devolución de primas"] }
+                { title: "Plan Básico", price: "350 Bs", color: '#52c41a', icon: <SafetyCertificateOutlined />, features: ["Cobertura por fallecimiento", "Gastos médicos básicos", "Asistencia Telefónica"] },
+                { title: "Plan Estándar", price: "700 Bs.", color: '#1890ff', icon: <RocketOutlined />, features: ["Cobertura por fallecimiento", "Gastos médicos ampliados", "Sepelio incluido", "Soporte 24/7", "Cobertura internacional"] },
+                { title: "Plan Premium", price: "1,200 Bs.", color: '#722ed1', icon: <CrownOutlined />, features: ["Cobertura por fallecimiento", "Mejor red de clínicas",  "Indemnización doble por accidente", "Soporte 24/7 personalizado"] }
             ].map((plan, index) => (
                 <Col xs={24} md={8} key={index}>
                     <Card 
@@ -136,7 +136,7 @@ const LandingPage: React.FC = () => {
         {/* --- 5. TESTIMONIOS (Nueva Sección - Carrusel Simple) --- */}
         <div style={{ padding: '80px 20px', background: '#001529', color: 'white' }}>
             <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-                <Title level={2} style={{ color: 'white', marginBottom: '50px' }}>Lo que dicen nuestros clientes</Title>
+                <Title level={2} style={{ color: 'white', marginBottom: '50px', fontFamily: 'Michroma, sans-serif' }}>Lo que dicen nuestros clientes</Title>
                 <Carousel autoplay dots={{ className: 'custom-dots' }}>
                     {testimonios.map((testimonio, i) => (
                         <div key={i}>
@@ -155,7 +155,7 @@ const LandingPage: React.FC = () => {
 
         {/* --- 6. PREGUNTAS FRECUENTES (Nueva Sección) --- */}
         <div style={{ padding: '100px 20px', maxWidth: '800px', margin: '0 auto' }}>
-            <Title level={2} style={{ textAlign: 'center', marginBottom: '50px' }}>Preguntas Frecuentes</Title>
+            <Title level={2} style={{ textAlign: 'center', marginBottom: '50px', fontFamily: 'Michroma, sans-serif'}}>Preguntas Frecuentes</Title>
             <Collapse accordion ghost expandIconPosition="end" size="large">
                 {faqs.map((faq, i) => (
                     <Panel header={<span style={{ fontSize: '16px', fontWeight: 500 }}>{faq.pregunta}</span>} key={i} extra={<QuestionCircleOutlined style={{ color: '#1890ff' }} />}>
@@ -167,7 +167,7 @@ const LandingPage: React.FC = () => {
 
         {/* --- 7. CTA FINAL --- */}
         <div style={{ padding: '80px 20px', background: 'linear-gradient(135deg, #1890ff 0%, #001529 100%)', textAlign: 'center', color: 'white' }}>
-            <Title level={2} style={{ color: 'white', marginBottom: '20px' }}>¿Listo para proteger tu futuro?</Title>
+            <Title level={2} style={{ color: 'white', marginBottom: '20px', fontFamily: 'Michroma, sans-serif'}}>¿Listo para proteger tu futuro?</Title>
             <Paragraph style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', marginBottom: '40px' }}>Únete a las miles de familias que confían en Seguros Univida.</Paragraph>
             <Button size="large" style={{ height: '50px', padding: '0 40px', color: '#1890ff', fontWeight: 'bold' }} onClick={() => navigate('/registro')}>
                 Empezar Ahora

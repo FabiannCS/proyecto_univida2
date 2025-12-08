@@ -3,7 +3,6 @@
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
-from io import BytesIO
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -16,6 +15,11 @@ from django.db import transaction
 from django.db.models import Sum, Count
 import random
 from datetime import date
+from django.db.models import Q
+import qrcode
+import base64
+from io import BytesIO
+from django.http import JsonResponse
 
 import random
 # Modelos
@@ -40,7 +44,13 @@ from .serializers import (
 def lista_clientes(request):
     # --- VER LISTA (GET) ---
     if request.method == 'GET':
-        clientes = Cliente.objects.all()
+        # Si es AGENTE, solo ve sus propios clientes
+        if hasattr(request.user, 'agente'):
+            clientes = Cliente.objects.filter(agente=request.user.agente)
+        else:
+            # Si es Admin, ve todos
+            clientes = Cliente.objects.all()
+            
         serializer = ClienteSerializer(clientes, many=True)
         return Response(serializer.data)
     
@@ -65,7 +75,18 @@ from datetime import date, timedelta # Asegúrate de tener timedelta importado
 def lista_polizas(request):
     # --- GET: LISTAR ---
     if request.method == 'GET':
-        polizas = Poliza.objects.all().order_by('-id')
+        
+        # Filtro para AGENTES
+        if hasattr(request.user, 'agente'):
+            # Ve sus propias pólizas O las solicitudes huérfanas (cotizaciones sin agente)
+            polizas = Poliza.objects.filter(
+                Q(agente=request.user.agente) | 
+                (Q(estado='cotizacion') & Q(agente__isnull=True))
+            ).order_by('-id')
+        else:
+            # Admin ve todo
+            polizas = Poliza.objects.all().order_by('-id')
+
         serializer = PolizaSerializer(polizas, many=True)
         return Response(serializer.data)
     
@@ -243,47 +264,58 @@ def eliminar_beneficiario(request, beneficiario_id):
 
 # API para una póliza específica
 @api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
 def detalle_poliza(request, poliza_id):
     try:
         poliza = Poliza.objects.get(id=poliza_id)
     except Poliza.DoesNotExist:
         return Response({'error': 'Póliza no encontrada'}, status=404)
 
+    # --- VER (GET) ---
     if request.method == 'GET':
         serializer = PolizaSerializer(poliza)
         return Response(serializer.data)
 
+    # --- EDITAR / ACEPTAR (PATCH) ---
     elif request.method in ['PUT', 'PATCH']:
         serializer = PolizaSerializer(poliza, data=request.data, partial=True)
         
         if serializer.is_valid():
             nuevo_estado = request.data.get('estado')
 
-            # --- LÓGICA: AGENTE ACEPTA LA SOLICITUD ---
+            # === LÓGICA DE ACEPTACIÓN ===
             if nuevo_estado == 'pendiente_pago' and poliza.estado == 'cotizacion':
                 try:
-                    # 1. Asignar Agente (si el usuario es agente)
+                    # 1. Asignar el Agente a la PÓLIZA
                     if hasattr(request.user, 'agente'):
-                        poliza.agente = request.user.agente
+                        agente_actual = request.user.agente
+                        poliza.agente = agente_actual
+                        
+                        # 2. ¡NUEVO! Asignar el Agente al CLIENTE también
+                        # Esto hace que el cliente aparezca en "Mis Clientes" de este agente
+                        cliente = poliza.cliente
+                        cliente.agente = agente_actual
+                        cliente.save() # Guardamos el cambio en el cliente
                     
-                    # 2. Generar FACTURA Automática
+                    # 3. Generar la FACTURA automática
                     Factura.objects.create(
                         poliza=poliza,
                         numero_factura=f"FAC-{random.randint(10000, 99999)}",
-                        monto=poliza.prima_anual, # O prima_mensual si es pago fraccionado
+                        monto=poliza.prima_anual, 
                         fecha_emision=date.today(),
-                        fecha_vencimiento=date.today() + timedelta(days=15), # 15 días para pagar
+                        fecha_vencimiento=date.today() + timedelta(days=15),
                         estado='pendiente',
                         concepto=f"Primera prima póliza {poliza.numero_poliza}"
                     )
                 except Exception as e:
-                    print(f"Error al generar factura: {e}")
+                    print(f"Error en lógica de aceptación: {e}")
             
-            # Guardamos los cambios en la póliza
+            # Guardamos los cambios de la póliza
             serializer.save()
             return Response(serializer.data)
             
         return Response(serializer.errors, status=400)
+
 
 # API para Facturas
 @api_view(['GET', 'POST'])
@@ -374,17 +406,58 @@ def lista_pagos(request):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def lista_siniestros(request):
+    # --- GET: LISTAR (Con Filtros de Seguridad) ---
     if request.method == 'GET':
-        siniestros = Siniestro.objects.all().order_by('-fecha_reporte')
+        usuario = request.user
+        
+        if usuario.rol == 'ADMIN':
+            # Admin ve todo
+            siniestros = Siniestro.objects.all().order_by('-fecha_reporte')
+            
+        elif usuario.rol == 'AGENTE':
+            # Agente ve siniestros de SUS clientes
+            # (Filtramos por pólizas donde el agente sea este usuario)
+            if hasattr(usuario, 'agente'):
+                siniestros = Siniestro.objects.filter(poliza__agente=usuario.agente).order_by('-fecha_reporte')
+            else:
+                siniestros = Siniestro.objects.none()
+
+        elif usuario.rol == 'CLIENTE':
+            # Cliente ve SOLO sus siniestros
+            # (Filtramos por pólizas que pertenezcan al cliente de este usuario)
+            if hasattr(usuario, 'cliente'):
+                siniestros = Siniestro.objects.filter(poliza__cliente__usuario=usuario).order_by('-fecha_reporte')
+            else:
+                siniestros = Siniestro.objects.none()
+        
+        else:
+            siniestros = Siniestro.objects.none()
+
         serializer = SiniestroSerializer(siniestros, many=True)
         return Response(serializer.data)
 
+    # --- POST: REPORTAR SINIESTRO ---
     elif request.method == 'POST':
         serializer = CrearSiniestroSerializer(data=request.data)
+        
         if serializer.is_valid():
-            # Asignar fecha de reporte automáticamente
-            siniestro = serializer.save(fecha_reporte=timezone.now().date())
-            return Response(SiniestroSerializer(siniestro).data, status=status.HTTP_201_CREATED)
+            try:
+                # Generamos número de siniestro automático
+                import random
+                numero_gen = f"SIN-{random.randint(10000, 99999)}"
+                
+                # Guardamos inyectando el número y la fecha
+                siniestro = serializer.save(
+                    numero_siniestro=numero_gen,
+                    fecha_reporte=timezone.now() # Fecha y hora actual
+                )
+                
+                return Response(SiniestroSerializer(siniestro).data, status=status.HTTP_201_CREATED)
+            
+            except Exception as e:
+                print(f"Error al crear siniestro: {e}")
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API para Notas de Póliza
@@ -484,13 +557,18 @@ def crear_agente(request):
 @permission_classes([IsAdminUser])
 def detalle_agente(request, agente_id):
     """
-    Obtiene los detalles de un usuario agente específico por su ID de Usuario.
+    Obtiene los detalles para editar un agente.
+    CORRECCIÓN: Busca por ID de Agente (no de Usuario).
     """
     try:
-        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
-    except Usuario.DoesNotExist:
+        # 1. Buscamos el perfil de Agente usando el ID que viene de la tabla
+        agente_perfil = Agente.objects.get(id=agente_id)
+        # 2. Obtenemos el usuario asociado a ese perfil
+        agente_usuario = agente_perfil.usuario
+    except Agente.DoesNotExist:
         return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+    # Devolvemos los datos del usuario (que es lo que el formulario edita)
     serializer = UsuarioAgenteSerializer(agente_usuario)
     return Response(serializer.data)
 
@@ -498,16 +576,24 @@ def detalle_agente(request, agente_id):
 @api_view(['PUT', 'PATCH'])
 @permission_classes([IsAdminUser])
 def editar_agente(request, agente_id):
-    """Actualiza un usuario agente existente."""
+    """
+    Actualiza los datos de un agente.
+    CORRECCIÓN: Busca por ID de Agente.
+    """
     try:
-        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
-    except Usuario.DoesNotExist:
+        # 1. Buscamos el perfil Agente
+        agente_perfil = Agente.objects.get(id=agente_id)
+        # 2. Obtenemos el usuario
+        agente_usuario = agente_perfil.usuario
+    except Agente.DoesNotExist:
         return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+    # 3. Actualizamos el usuario
     serializer = UsuarioAgenteSerializer(agente_usuario, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
+        
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -515,24 +601,25 @@ def editar_agente(request, agente_id):
 @permission_classes([IsAdminUser])
 def eliminar_agente(request, agente_id):
     """
-    Elimina (o desactiva) un usuario agente existente.
+    Desactiva un agente.
+    CORRECCIÓN: Busca por ID de Agente.
     """
     try:
-        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
-    except Usuario.DoesNotExist:
+        agente_perfil = Agente.objects.get(id=agente_id)
+        agente_usuario = agente_perfil.usuario
+    except Agente.DoesNotExist:
         return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-    agente_usuario.is_active = False
-    agente_usuario.save()
-
-    try:
-        agente_perfil = Agente.objects.get(usuario=agente_usuario)
+    if request.method == 'DELETE':
+        # Desactivar Usuario
+        agente_usuario.is_active = False
+        agente_usuario.save()
+        
+        # Desactivar Perfil
         agente_perfil.estado = 'inactivo'
         agente_perfil.save()
-    except Agente.DoesNotExist:
-        pass
-
-    return Response({'mensaje': 'Agente desactivado correctamente'}, status=status.HTTP_204_NO_CONTENT)
+        
+        return Response({'mensaje': 'Agente desactivado correctamente'}, status=status.HTTP_204_NO_CONTENT)
 
 # API para crear cliente
 @api_view(['POST'])
@@ -814,59 +901,7 @@ def crear_agente(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-@permission_classes([IsAdminUser])
-def detalle_agente(request, agente_id):
-    """
-    Obtiene los detalles de un usuario agente específico por su ID de Usuario.
-    """
-    try:
-        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE') 
-    except Usuario.DoesNotExist:
-        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'GET':
-        serializer = UsuarioAgenteSerializer(agente_usuario) 
-        return Response(serializer.data)
-
-@api_view(['PUT', 'PATCH'])
-@permission_classes([IsAdminUser])
-def editar_agente(request, agente_id):
-    """Actualiza un usuario agente existente."""
-    try:
-        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
-    except Usuario.DoesNotExist:
-        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = UsuarioAgenteSerializer(agente_usuario, data=request.data, partial=True) 
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['DELETE'])
-@permission_classes([IsAdminUser])
-def eliminar_agente(request, agente_id):
-    """
-    Elimina (o desactiva) un usuario agente existente.
-    """
-    try:
-        agente_usuario = Usuario.objects.get(pk=agente_id, rol='AGENTE')
-    except Usuario.DoesNotExist:
-        return Response({'error': 'Agente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'DELETE':
-        agente_usuario.is_active = False
-        agente_usuario.save()
-        
-        try:
-            agente_perfil = Agente.objects.get(usuario=agente_usuario)
-            agente_perfil.estado = 'inactivo'
-            agente_perfil.save()
-        except Agente.DoesNotExist:
-            pass 
-        
-        return Response({'mensaje': 'Agente desactivado correctamente'}, status=status.HTTP_204_NO_CONTENT)
 
 # API para crear cliente
 @api_view(['POST'])
@@ -1276,3 +1311,98 @@ def agente_dashboard_stats(request):
     }
     
     return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def iniciar_pago_qr(request):
+    """
+    Crea un intento de pago y devuelve la imagen QR en Base64.
+    """
+    factura_id = request.data.get('factura_id')
+    try:
+        factura = Factura.objects.get(id=factura_id)
+    except Factura.DoesNotExist:
+        return Response({'error': 'Factura no encontrada'}, status=404)
+
+    # Creamos el registro del pago en estado 'pendiente'
+    # Usamos la referencia para identificar este intento único
+    referencia_unica = f"QR-{random.randint(100000, 999999)}"
+    
+    pago = Pago.objects.create(
+        factura=factura,
+        monto_pagado=factura.monto,
+        metodo_pago='transferencia',
+        estado='pendiente', # <-- IMPORTANTE: Esperando confirmación
+        referencia_pago=referencia_unica,
+        descripcion="Esperando pago por QR..."
+    )
+
+    # Generar el código QR (En la vida real, aquí llamarías a la API del Banco)
+    # Aquí generamos un QR que contiene una URL para "Simular el Pago"
+    # (Esto ayuda a probar el flujo sin dinero real)
+    url_simulacion = f"http://localhost:8000/api/pagos/simular-exito/{pago.id}/"
+    
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(url_simulacion)
+    qr.make(fit=True)
+    img = qr.make_image(fill='black', back_color='white')
+
+    # Convertir imagen a Base64 para enviarla al Frontend
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    img_str = base64.b64encode(buffer.getvalue()).decode()
+
+    return Response({
+        'pago_id': pago.id,
+        'referencia': referencia_unica,
+        'qr_image': f"data:image/png;base64,{img_str}",
+        'mensaje': 'Escanea el QR para pagar'
+    })
+
+# 2. CHECK STATUS (POLLING)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verificar_estado_pago(request, pago_id):
+    """
+    El Frontend llama a esto cada 3 segundos para ver si ya se pagó.
+    """
+    try:
+        pago = Pago.objects.get(id=pago_id)
+        if pago.estado == 'completado':
+            return Response({'status': 'completado'})
+        return Response({'status': 'pendiente'})
+    except Pago.DoesNotExist:
+        return Response({'status': 'error'}, status=404)
+
+# 3. WEBHOOK SIMULADO (Para probar)
+@api_view(['GET'])
+@permission_classes([AllowAny]) # Pública para poder llamarla desde el navegador/celular
+def simular_pago_exitoso(request, pago_id):
+    """
+    Esta vista simula lo que haría el Banco al confirmar el dinero.
+    """
+    try:
+        pago = Pago.objects.get(id=pago_id)
+        
+        # --- LÓGICA DE ACTIVACIÓN AUTOMÁTICA ---
+        if pago.estado != 'completado':
+            pago.estado = 'completado'
+            pago.descripcion = "Pago verificado automáticamente por QR."
+            pago.save()
+            
+            # Actualizar Factura
+            factura = pago.factura
+            factura.estado = 'pagada'
+            factura.save()
+            
+            # Actualizar Póliza
+            poliza = factura.poliza
+            if poliza.estado == 'pendiente_pago':
+                poliza.estado = 'activa'
+                poliza.save()
+                
+        return HttpResponse("<h1>¡Pago Exitoso! ✅</h1><p>Ya puedes cerrar esta ventana. Tu póliza se activará en unos segundos.</p>")
+        
+    except Pago.DoesNotExist:
+        return HttpResponse("Error: Pago no encontrado")

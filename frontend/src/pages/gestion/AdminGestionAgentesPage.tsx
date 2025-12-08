@@ -148,7 +148,8 @@ const AdminGestionAgentesPage: React.FC = () => {
         <Space size="middle">
           <Button 
             icon={<EditOutlined />} 
-            onClick={() => navigate(`/admin-agentes/${record.id}/editar`)}
+            onClick={() => navigate(`/admin-agentes/${record.id}/editar`)} 
+            style={{ marginRight: 8 }}
           >
             Editar
           </Button>

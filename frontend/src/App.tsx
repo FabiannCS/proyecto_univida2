@@ -45,6 +45,8 @@ import AgenteListarSiniestrosPage from './pages/agente/AgenteListarSiniestrosPag
 import ClientePagarPolizaPage from './pages/cliente/ClientePagarPolizaPage';
 import AgenteDetalleSiniestroPage from './pages/agente/AgenteDetalleSiniestroPage';
 import AgenteReportarSiniestroPage from './pages/agente/AgenteReportarSiniestroPage';
+import AdminPagosPage from './pages/gestion/finanzas/AdminPagosPage';
+import ClienteDetalleSiniestroPage from './pages/cliente/ClienteDetalleSiniestroPage';
 
 // Páginas Cliente
 import ClienteDashboardPage from './pages/cliente/ClienteDashboardPage';
@@ -70,6 +72,7 @@ function App() {
           <Route path="/" element={<AdminLayout />}>
             <Route path="admin-dashboard" element={<AdminDashboardPage />} />
             <Route path="admin-perfil" element={<AdminMiPerfilPage />} />
+            <Route path="admin-pagos" element={<AdminPagosPage />} />
 
             {/* Agentes */}
             <Route path="admin-agentes" element={<AdminGestionAgentesPage />} />
@@ -104,6 +107,7 @@ function App() {
             <Route path="/reportar-siniestro" element={<ClienteReportarSiniestroPage />} />
             <Route path="/mis-siniestros" element={<ClienteMisSiniestrosPage />} />
             <Route path="/pagar-poliza" element={<ClientePagarPolizaPage />} />
+            <Route path="/mis-siniestros/:id" element={<ClienteDetalleSiniestroPage />} />
           </Route>
         </Route>
 

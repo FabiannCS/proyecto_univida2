@@ -37,6 +37,7 @@ urlpatterns = [
     path('beneficiarios/agregar/', views.agregar_beneficiario, name='agregar_beneficiario'),
     path('beneficiarios/<int:beneficiario_id>/eliminar/', views.eliminar_beneficiario, name='eliminar_beneficiario'),
     path('agente/dashboard-stats/', views.agente_dashboard_stats, name='agente_dashboard_stats'),
+    
     #API PARA ACTIVAR/INACTIVAR CLIENTES DESDE AGENTE
     path('clientes/<int:cliente_id>/toggle-estado/', views.toggle_estado_cliente, name='toggle_estado_cliente'),
 
@@ -63,4 +64,7 @@ urlpatterns = [
     # RUTAS PARA FACTURAS Y PAGOS
     path('facturas/', views.lista_facturas, name='lista_facturas'),
     path('pagos/', views.lista_pagos, name='lista_pagos'),
+    path('pagos/iniciar-qr/', views.iniciar_pago_qr, name='iniciar_pago_qr'),
+    path('pagos/estado/<int:pago_id>/', views.verificar_estado_pago, name='verificar_estado_pago'),
+    path('pagos/simular-exito/<int:pago_id>/', views.simular_pago_exitoso, name='simular_pago_exitoso'),
 ]

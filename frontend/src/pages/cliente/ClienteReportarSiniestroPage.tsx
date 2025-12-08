@@ -99,7 +99,7 @@ const ClienteReportarSiniestroPage: React.FC = () => {
         style={{ marginBottom: 24 }}
       />
 
-      <Card bordered={false} style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+      <Card hoverable style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <Form form={form} layout="vertical" onFinish={onFinish} size="large">
             
             <Row gutter={16}>

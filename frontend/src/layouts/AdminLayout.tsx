@@ -14,9 +14,9 @@ import {
   LogoutOutlined,
   HomeOutlined,
   MoreOutlined,
-  SearchOutlined,
   BellOutlined,
-  QuestionCircleOutlined
+  QuestionCircleOutlined,
+  DollarCircleOutlined
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -108,6 +108,11 @@ const AdminLayout: React.FC = () => {
       icon: React.createElement(ExclamationCircleOutlined),
       label: <Link to="/admin-siniestros" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Siniestros</Link>,
     },
+    {
+    key: '6', // El siguiente número libre
+    icon: React.createElement(DollarCircleOutlined),
+    label: <Link to="/admin-pagos">Gestión de Pagos</Link>,
+    },
   ];
 
   const getSelectedKey = () => {
@@ -116,6 +121,7 @@ const AdminLayout: React.FC = () => {
     if (path.startsWith('/admin-clientes')) return ['3'];
     if (path.startsWith('/admin-polizas')) return ['4'];
     if (path.startsWith('/admin-siniestros')) return ['5'];
+    if (path.startsWith('/admin-pagos')) return ['6'];
     return ['1'];
   };
 
