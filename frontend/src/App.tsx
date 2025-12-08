@@ -47,6 +47,7 @@ import AgenteDetalleSiniestroPage from './pages/agente/AgenteDetalleSiniestroPag
 import AgenteReportarSiniestroPage from './pages/agente/AgenteReportarSiniestroPage';
 import AdminPagosPage from './pages/gestion/finanzas/AdminPagosPage';
 import ClienteDetalleSiniestroPage from './pages/cliente/ClienteDetalleSiniestroPage';
+import AdminSolicitudesPage from './pages/polizas/AdminSolicitudesPage';
 
 // Páginas Cliente
 import ClienteDashboardPage from './pages/cliente/ClienteDashboardPage';
@@ -89,6 +90,7 @@ function App() {
             <Route path="admin-polizas/crear" element={<AdminCrearPolizaPage />} />
             <Route path="admin-polizas/:id" element={<AdminDetallePolizaPage />} />
             <Route path="admin-polizas/:polizaId/reportar-siniestro" element={<ReportarSiniestroPage />} />
+            <Route path="admin-solicitudes" element={<AdminSolicitudesPage />} />
 
             {/* Siniestros */}
             <Route path="admin-siniestros" element={<AdminListarSiniestrosPage />} />

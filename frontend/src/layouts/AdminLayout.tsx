@@ -16,7 +16,7 @@ import {
   MoreOutlined,
   BellOutlined,
   QuestionCircleOutlined,
-  DollarCircleOutlined
+  DollarCircleOutlined, InboxOutlined
 } from '@ant-design/icons';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -99,6 +99,11 @@ const AdminLayout: React.FC = () => {
       label: <Link to="/admin-clientes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Clientes</Link>,
     },
     {
+    key: '7', // O el número que toque
+    icon: React.createElement(InboxOutlined),
+    label: <Link to="/admin-solicitudes" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Bandeja Solicitudes</Link>,
+    },
+    {
       key: '4',
       icon: React.createElement(FileTextOutlined),
       label: <Link to="/admin-polizas" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestionar Pólizas</Link>,
@@ -111,7 +116,7 @@ const AdminLayout: React.FC = () => {
     {
     key: '6', // El siguiente número libre
     icon: React.createElement(DollarCircleOutlined),
-    label: <Link to="/admin-pagos">Gestión de Pagos</Link>,
+    label: <Link to="/admin-pagos" style={{fontFamily: 'Michroma, sans-serif', fontSize: '0.8rem'}}>Gestión de Pagos</Link>,
     },
   ];
 
@@ -122,6 +127,7 @@ const AdminLayout: React.FC = () => {
     if (path.startsWith('/admin-polizas')) return ['4'];
     if (path.startsWith('/admin-siniestros')) return ['5'];
     if (path.startsWith('/admin-pagos')) return ['6'];
+    if (path.startsWith('/admin-solicitudes')) return ['7'];
     return ['1'];
   };
 

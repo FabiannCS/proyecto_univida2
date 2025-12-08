@@ -1,7 +1,7 @@
 // en frontend/src/pages/agente/AgenteCrearPolizaPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Typography, Form, Input, Button, Select, InputNumber, message, Row, Col, Card, Divider, List, DatePicker, Checkbox } from 'antd';
-import { SaveOutlined, ArrowLeftOutlined, UserOutlined, CheckOutlined, SafetyCertificateOutlined, RocketOutlined, CrownOutlined, UsergroupAddOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { Typography, Form, Input, Button, Select, InputNumber, message, Row, Col, Card, Divider, List, DatePicker, Checkbox, Modal, Descriptions, Tabs } from 'antd';
+import { SaveOutlined, ArrowLeftOutlined, UserOutlined, CheckOutlined, SafetyCertificateOutlined, RocketOutlined, CrownOutlined, UsergroupAddOutlined, DeleteOutlined, PlusOutlined, InfoCircleOutlined, FileProtectOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -9,10 +9,41 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+// --- 1. DATOS COMPLETOS (Iguales al Catálogo del Cliente) ---
 const PLANES: any = {
-    'vida_temporal': { nombre: "Plan Básico", precio: 350, suma: 50000, icono: <SafetyCertificateOutlined />, features: ["Cobertura fallecimiento", "Asistencia 24/7"] },
-    'accidentes': { nombre: "Plan Estándar", precio: 700, suma: 80000, icono: <RocketOutlined />, features: ["Muerte accidental", "Gastos médicos", "Sepelio"] },
-    'vida_entera': { nombre: "Plan Premium", precio: 1200, suma: 150000, icono: <CrownOutlined />, features: ["Cobertura total", "Red de clínicas", "Devolución primas"] }
+    'vida_temporal': {
+        nombre: "Plan Básico",
+        precio: 350,
+        suma: 50000,
+        color: '#52c41a',
+        icono: <SafetyCertificateOutlined />,
+        features: ["Cobertura por fallecimiento", "Gastos médicos básicos", "Asistencia telefónica 24/7"],
+        descripcion: "La opción ideal para quienes buscan una protección esencial a bajo costo.",
+        requisitos: ["Edad 18-65 años", "Declaración simple de salud"],
+        exclusiones: ["Enfermedades preexistentes", "Deportes extremos"]
+    },
+    'accidentes': {
+        nombre: "Plan Estándar",
+        precio: 700,
+        suma: 80000,
+        color: '#1890ff',
+        icono: <RocketOutlined />,
+        features: ["Muerte natural y accidental", "Gastos médicos ampliados", "Sepelio incluido", "Cobertura internacional"],
+        descripcion: "Nuestro plan más equilibrado con cobertura robusta.",
+        requisitos: ["Edad 18-60 años", "Examen médico básico"],
+        exclusiones: ["Actos delictivos", "Sustancias controladas"]
+    },
+    'vida_entera': {
+        nombre: "Plan Premium",
+        precio: 1200,
+        suma: 150000,
+        color: '#722ed1',
+        icono: <CrownOutlined />,
+        features: ["Cobertura total todo riesgo", "Mejor red de clínicas", "Devolución de prima al 5to año"],
+        descripcion: "La protección definitiva con coberturas millonarias y ahorro.",
+        requisitos: ["Edad 21+ años", "Revisión médica completa", "Ingresos demostrables"],
+        exclusiones: ["Conflictos bélicos", "Fraude"]
+    }
 };
 
 const AgenteCrearPolizaPage: React.FC = () => {
@@ -20,6 +51,10 @@ const AgenteCrearPolizaPage: React.FC = () => {
     const [clientes, setClientes] = useState<any[]>([]);
     const [planSeleccionado, setPlanSeleccionado] = useState<any>(null);
     const [pagoInmediato, setPagoInmediato] = useState(false);
+    
+    // Estado para el Modal de Info
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+
     const [form] = Form.useForm();
     const navigate = useNavigate();
 
@@ -82,7 +117,7 @@ const AgenteCrearPolizaPage: React.FC = () => {
 
             <Row gutter={24}>
                 <Col xs={24} lg={16}>
-                    <Card hoverable style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                    <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                         <Form form={form} layout="vertical" onFinish={onFinish} size="large"
                             initialValues={{ fecha_inicio: dayjs(), fecha_vencimiento: dayjs().add(1, 'year') }}
                         >
@@ -167,7 +202,6 @@ const AgenteCrearPolizaPage: React.FC = () => {
                                     )}
                                 </Form.List>
                             </Card>
-                            {/* ----------------------------- */}
 
                             <Divider />
                             
@@ -206,10 +240,10 @@ const AgenteCrearPolizaPage: React.FC = () => {
                     </Card>
                 </Col>
 
-                {/* Columna Derecha (Resumen) */}
+                {/* Columna Derecha (Resumen Mejorado) */}
                 <Col xs={24} lg={8}>
                     {planSeleccionado ? (
-                        <Card title="Resumen del Producto" hoverable style={{ position: 'sticky', top: 20, borderTop: `4px solid ${planSeleccionado.color}` }}>
+                        <Card title="Resumen del Producto" bordered={false} style={{ position: 'sticky', top: 20, borderTop: `4px solid ${planSeleccionado.color}` }}>
                             <div style={{ textAlign: 'center', marginBottom: 24 }}>
                                 <div style={{ fontSize: '40px', color: planSeleccionado.color, marginBottom: 10 }}>{planSeleccionado.icono}</div>
                                 <Title level={4} style={{ margin: 0 }}>{planSeleccionado.nombre}</Title>
@@ -217,7 +251,17 @@ const AgenteCrearPolizaPage: React.FC = () => {
                             </div>
                             <List size="small" dataSource={planSeleccionado.features} renderItem={(item: any) => (<List.Item style={{ padding: '8px 0', border: 'none' }}><CheckOutlined style={{ color: '#52c41a', marginRight: 10 }} /> <Text>{item}</Text></List.Item>)} />
                             <Divider style={{ margin: '16px 0' }} />
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><Text strong>Costo Anual:</Text><Text strong style={{ fontSize: '16px' }}>Bs. {planSeleccionado.precio.toLocaleString()}</Text></div>
+                            
+                            {/* --- BOTÓN DE MÁS INFORMACIÓN (NUEVO) --- */}
+                            <Button block icon={<InfoCircleOutlined />} onClick={() => setIsInfoModalOpen(true)}>
+                                Ver Detalles del Plan
+                            </Button>
+                            {/* -------------------------------------- */}
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+                                <Text strong>Costo Anual:</Text>
+                                <Text strong style={{ fontSize: '16px' }}>Bs. {planSeleccionado.precio.toLocaleString()}</Text>
+                            </div>
                         </Card>
                     ) : (
                         <Card bordered={false} style={{ textAlign: 'center', color: '#999', background: '#f5f5f5', border: '1px dashed #d9d9d9' }}>
@@ -226,6 +270,50 @@ const AgenteCrearPolizaPage: React.FC = () => {
                     )}
                 </Col>
             </Row>
+
+            {/* --- MODAL DE INFORMACIÓN DETALLADA (NUEVO) --- */}
+            <Modal
+                title={null}
+                open={isInfoModalOpen}
+                onCancel={() => setIsInfoModalOpen(false)}
+                footer={[<Button key="close" onClick={() => setIsInfoModalOpen(false)}>Cerrar</Button>]}
+            >
+                {planSeleccionado && (
+                    <div>
+                        <div style={{ textAlign: 'center', marginBottom: 20, borderBottom: `4px solid ${planSeleccionado.color}`, paddingBottom: 15 }}>
+                            <div style={{ fontSize: '40px', color: planSeleccionado.color }}>{planSeleccionado.icono}</div>
+                            <Title level={3} style={{ margin: '5px 0' }}>{planSeleccionado.nombre}</Title>
+                            <Text type="secondary">{planSeleccionado.descripcion}</Text>
+                        </div>
+
+                        <Tabs defaultActiveKey="1" items={[
+                            {
+                                key: '1',
+                                label: 'Requisitos',
+                                children: (
+                                    <List
+                                        size="small"
+                                        dataSource={planSeleccionado.requisitos}
+                                        renderItem={(item: any) => <List.Item><FileProtectOutlined style={{ marginRight: 8, color: '#1890ff' }} /> {item}</List.Item>}
+                                    />
+                                )
+                            },
+                            {
+                                key: '2',
+                                label: 'Exclusiones',
+                                children: (
+                                    <List
+                                        size="small"
+                                        dataSource={planSeleccionado.exclusiones}
+                                        renderItem={(item: any) => <List.Item><CloseCircleOutlined style={{ marginRight: 8, color: '#cf1322' }} /> {item}</List.Item>}
+                                    />
+                                )
+                            }
+                        ]} />
+                    </div>
+                )}
+            </Modal>
+
         </div>
     );
 };
