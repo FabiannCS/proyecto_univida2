@@ -20,6 +20,7 @@ import qrcode
 import base64
 from io import BytesIO
 from django.http import JsonResponse
+from datetime import timedelta
 
 import random
 # Modelos
@@ -276,41 +277,51 @@ def detalle_poliza(request, poliza_id):
         serializer = PolizaSerializer(poliza)
         return Response(serializer.data)
 
-    # --- EDITAR / ACEPTAR (PATCH) ---
+    # --- EDITAR / ASIGNAR (PATCH) ---
     elif request.method in ['PUT', 'PATCH']:
         serializer = PolizaSerializer(poliza, data=request.data, partial=True)
         
         if serializer.is_valid():
             nuevo_estado = request.data.get('estado')
+            nuevo_agente_id = request.data.get('agente') # <-- ID del agente enviado por el Admin
 
-            # === LÓGICA DE ACEPTACIÓN ===
+            # LÓGICA DE ASIGNACIÓN Y CAMBIO DE ESTADO
+            # Si cambia a 'pendiente_pago' (Aceptación)
             if nuevo_estado == 'pendiente_pago' and poliza.estado == 'cotizacion':
                 try:
-                    # 1. Asignar el Agente a la PÓLIZA
-                    if hasattr(request.user, 'agente'):
-                        agente_actual = request.user.agente
-                        poliza.agente = agente_actual
-                        
-                        # 2. ¡NUEVO! Asignar el Agente al CLIENTE también
-                        # Esto hace que el cliente aparezca en "Mis Clientes" de este agente
-                        cliente = poliza.cliente
-                        cliente.agente = agente_actual
-                        cliente.save() # Guardamos el cambio en el cliente
+                    agente_asignado = None
+
+                    # CASO 1: Es ADMIN asignando a alguien
+                    if request.user.rol == 'ADMIN' and nuevo_agente_id:
+                        agente_asignado = Agente.objects.get(id=nuevo_agente_id)
                     
-                    # 3. Generar la FACTURA automática
-                    Factura.objects.create(
-                        poliza=poliza,
-                        numero_factura=f"FAC-{random.randint(10000, 99999)}",
-                        monto=poliza.prima_anual, 
-                        fecha_emision=date.today(),
-                        fecha_vencimiento=date.today() + timedelta(days=15),
-                        estado='pendiente',
-                        concepto=f"Primera prima póliza {poliza.numero_poliza}"
-                    )
+                    # CASO 2: Es AGENTE auto-asignándose
+                    elif hasattr(request.user, 'agente'):
+                        agente_asignado = request.user.agente
+
+                    if agente_asignado:
+                        # 1. Asignar Póliza
+                        poliza.agente = agente_asignado
+                        
+                        # 2. Asignar Cliente (Vinculación)
+                        cliente = poliza.cliente
+                        cliente.agente = agente_asignado
+                        cliente.save()
+
+                        # 3. Generar Factura
+                        Factura.objects.create(
+                            poliza=poliza,
+                            numero_factura=f"FAC-{random.randint(10000, 99999)}",
+                            monto=poliza.prima_anual, 
+                            fecha_emision=date.today(),
+                            fecha_vencimiento=date.today() + timedelta(days=15),
+                            estado='pendiente',
+                            concepto=f"Primera prima póliza {poliza.numero_poliza}"
+                        )
                 except Exception as e:
-                    print(f"Error en lógica de aceptación: {e}")
+                    print(f"Error en asignación: {e}")
+                    return Response({'error': str(e)}, status=400)
             
-            # Guardamos los cambios de la póliza
             serializer.save()
             return Response(serializer.data)
             
@@ -318,16 +329,36 @@ def detalle_poliza(request, poliza_id):
 
 
 # API para Facturas
+# en seguros/views.py
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def lista_facturas(request):
     """
-    Gestión de Facturas. Permite filtrar por 'poliza_id' o 'estado'.
+    Lista facturas filtrando por el rol del usuario (Admin, Agente, Cliente).
     """
     if request.method == 'GET':
-        queryset = Factura.objects.all()
+        queryset = Factura.objects.all().order_by('fecha_vencimiento')
         
-        # Filtros desde la URL (ej: /api/facturas/?poliza_id=5)
+        # --- FILTROS DE SEGURIDAD POR ROL ---
+        if request.user.rol == 'AGENTE':
+            # El Agente solo ve facturas de SUS pólizas
+            if hasattr(request.user, 'agente'):
+                queryset = queryset.filter(poliza__agente=request.user.agente)
+            else:
+                queryset = queryset.none() # Si es agente pero no tiene perfil, no ve nada
+
+        elif request.user.rol == 'CLIENTE':
+            # El Cliente solo ve SUS propias facturas
+            if hasattr(request.user, 'cliente'):
+                queryset = queryset.filter(poliza__cliente__usuario=request.user)
+            else:
+                queryset = queryset.none()
+        
+        # (Si es ADMIN, ve todo, así que no filtramos nada extra)
+        # ------------------------------------
+
+        # Filtros adicionales de la URL (para el buscador del frontend)
         poliza_id = request.query_params.get('poliza_id')
         estado = request.query_params.get('estado')
         
@@ -340,6 +371,7 @@ def lista_facturas(request):
         return Response(serializer.data)
     
     elif request.method == 'POST':
+        # (Tu código de crear factura sigue igual)
         serializer = CrearFacturaSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -854,16 +886,6 @@ def detalle_siniestro(request, siniestro_id):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def detalle_nota_poliza(request, nota_id):
-    try:
-        nota = NotaPoliza.objects.get(id=nota_id)
-        serializer = NotaPolizaSerializer(nota)
-        return Response(serializer.data)
-    except NotaPoliza.DoesNotExist:
-        return Response({'error': 'Nota no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-
 # En seguros/views.py - ACTUALIZAR lista_agentes
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -1273,41 +1295,69 @@ def toggle_estado_cliente(request, cliente_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def agente_dashboard_stats(request):
-    """
-    Devuelve las estadísticas clave para el dashboard del agente.
-    """
     try:
-        # Verificar que sea agente
         agente = Agente.objects.get(usuario=request.user)
     except Agente.DoesNotExist:
         return Response({'error': 'No eres un agente'}, status=403)
 
-    # 1. Total Clientes (Usuarios únicos con pólizas de este agente o asignados)
-    # Una forma simple es contar las pólizas únicas, o si tienes relación directa en Cliente.
-    # Usaremos las pólizas para saber cuántos clientes activos tiene.
-    total_clientes = Poliza.objects.filter(agente=agente).values('cliente').distinct().count()
-
-    # 2. Pólizas Vendidas (Activas)
+    # 1. Totales Básicos
+    total_clientes = Cliente.objects.filter(agente=agente).count()
     polizas_activas = Poliza.objects.filter(agente=agente, estado='activa').count()
+    solicitudes_pendientes = Poliza.objects.filter(estado='cotizacion').count() # O filtra solo las asignadas si aplica
 
-    # 3. Solicitudes Pendientes (En cotización, sin agente o asignadas a él)
-    # (Aquí asumimos que el agente ve todas las cotizaciones como "oportunidad" o solo las suyas)
-    solicitudes_pendientes = Poliza.objects.filter(estado='cotizacion').count()
-
-    # 4. Ventas del Mes (Suma de primas de pólizas creadas este mes)
-    hoy = timezone.now()
-    ventas_mes = Poliza.objects.filter(
+    # 2. Finanzas del Mes
+    hoy = timezone.now().date()
+    ventas_mes_monto = Poliza.objects.filter(
         agente=agente,
         estado='activa',
         creado_en__month=hoy.month,
         creado_en__year=hoy.year
     ).aggregate(total=Sum('prima_anual'))['total'] or 0
+    
+    # Calculamos comisión (ej: el agente gana el porcentaje definido en su perfil, o 10% por defecto)
+    porcentaje_comision = agente.comision if agente.comision else 10
+    comisiones_estimadas = float(ventas_mes_monto) * (float(porcentaje_comision) / 100)
+
+    # 3. Pólizas por Vencer (Próximos 30 días) - ¡Oportunidad de Venta!
+    fecha_limite = hoy + timedelta(days=30)
+    por_vencer_qs = Poliza.objects.filter(
+        agente=agente,
+        estado='activa',
+        fecha_vencimiento__range=[hoy, fecha_limite]
+    ).select_related('cliente__usuario')[:5] # Solo las 5 primeras
+    
+    por_vencer_data = []
+    for p in por_vencer_qs:
+        por_vencer_data.append({
+            'id': p.id,
+            'numero': p.numero_poliza,
+            'cliente': f"{p.cliente.usuario.first_name} {p.cliente.usuario.last_name}",
+            'vence': p.fecha_vencimiento
+        })
+
+    # 4. Últimas Ventas (Actividad Reciente)
+    ultimas_ventas_qs = Poliza.objects.filter(
+        agente=agente, 
+        estado='activa'
+    ).order_by('-creado_en')[:5]
+
+    ultimas_ventas_data = []
+    for p in ultimas_ventas_qs:
+        ultimas_ventas_data.append({
+            'id': p.id,
+            'plan': p.cobertura.split('.')[0] if p.cobertura else 'Seguro',
+            'monto': p.prima_anual,
+            'fecha': p.creado_en.date()
+        })
 
     data = {
         'total_clientes': total_clientes,
         'polizas_activas': polizas_activas,
         'solicitudes_pendientes': solicitudes_pendientes,
-        'ventas_mes': ventas_mes
+        'ventas_mes': ventas_mes_monto,
+        'comisiones_mes': comisiones_estimadas, # Nuevo
+        'por_vencer': por_vencer_data,          # Nuevo
+        'ultimas_ventas': ultimas_ventas_data   # Nuevo
     }
     
     return Response(data)
