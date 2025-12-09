@@ -40,11 +40,11 @@ const AgenteDetalleClientePage: React.FC = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // 1. Cargar Datos del Cliente
-        const resCliente = await axios.get(`http://127.0.0.1:8000/api/clientes/${id}/`, { headers });
+        const resCliente = await axios.get(`https://proyecto-univida2.onrender.com/api/clientes/${id}/`, { headers });
         setCliente(resCliente.data);
 
         // 2. Cargar Pólizas de este Cliente
-        const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const resPolizas = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         // Filtro robusto: revisa ID de cliente directo o anidado
         const misPolizas = resPolizas.data.filter((p: any) => 
             p.cliente === parseInt(id!) || p.cliente_info?.id === parseInt(id!)

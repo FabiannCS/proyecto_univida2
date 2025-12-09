@@ -43,7 +43,7 @@ const ClienteMisSiniestrosPage: React.FC = () => {
         const miUsername = decodedToken.username;
 
         // 1. Pedimos todos los siniestros
-        const response = await axios.get('http://127.0.0.1:8000/api/siniestros/', { headers });
+        const response = await axios.get('https://proyecto-univida2.onrender.com/api/siniestros/', { headers });
         
         // 2. Filtramos SOLO los de este usuario
         // (Tu backend debería hacer esto idealmente, pero lo hacemos aquí por ahora)

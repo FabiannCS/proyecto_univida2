@@ -23,7 +23,7 @@ const ForgotPasswordPage: React.FC = () => {
         // Tu compañero debe crear este endpoint: POST /api/password-reset/
         try {
             // (Esta línea está comentada hasta que el backend esté listo)
-            // await axios.post('http://127.0.0.1:8000/api/password-reset/', { email: values.email });
+            // await axios.post('https://proyecto-univida2.onrender.com/api/password-reset/', { email: values.email });
             
             // --- INICIO: Simulación (Borra esto cuando el backend esté listo) ---
             await new Promise(resolve => setTimeout(resolve, 1000)); // Simula espera

@@ -71,7 +71,7 @@ axios.interceptors.response.use(
 
       try {
         // Intentar refrescar el token
-        const response = await axios.post('http://127.0.0.1:8000/api/token/refresh/', {
+        const response = await axios.post('https://proyecto-univida2.onrender.com/api/token/refresh/', {
           refresh: refreshToken
         });
 

@@ -26,7 +26,7 @@ const AgenteReportarSiniestroPage: React.FC = () => {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Obtenemos las pólizas para que el agente seleccione cuál tiene el siniestro
-        const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const response = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         
         // Filtramos solo las ACTIVAS (no tiene sentido reportar siniestro en una cancelada o cotización)
         const activas = response.data.filter((p: any) => p.estado === 'activa');
@@ -56,7 +56,7 @@ const AgenteReportarSiniestroPage: React.FC = () => {
         // Opcional: Podrías agregar un campo interno 'reportado_por': 'agente' si tu backend lo soportara
       };
 
-      await axios.post('http://127.0.0.1:8000/api/siniestros/', datosSiniestro, { headers });
+      await axios.post('https://proyecto-univida2.onrender.com/api/siniestros/', datosSiniestro, { headers });
       
       message.success('Siniestro registrado exitosamente.');
       navigate('/agente-siniestros');

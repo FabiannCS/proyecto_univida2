@@ -22,7 +22,7 @@ const AgenteListarPolizasPage: React.FC = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
       
       // FILTRO PRINCIPAL: 
       // Excluimos 'cotizacion' y 'cancelada' (porque esas están en la Bandeja de Solicitudes)
@@ -48,7 +48,7 @@ const AgenteListarPolizasPage: React.FC = () => {
         const token = getToken();
         const headers = { Authorization: `Bearer ${token}` };
         
-        await axios.patch(`http://127.0.0.1:8000/api/polizas/${id}/`, {
+        await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${id}/`, {
             estado: 'inactiva'
         }, { headers });
 

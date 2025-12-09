@@ -24,7 +24,7 @@ const AgenteDashboardPage: React.FC = () => {
         if (!token) return;
         const headers = { Authorization: `Bearer ${token}` };
 
-        const response = await axios.get('http://127.0.0.1:8000/api/agente/dashboard-stats/', { headers });
+        const response = await axios.get('https://proyecto-univida2.onrender.com/api/agente/dashboard-stats/', { headers });
         setStats(response.data);
 
       } catch (error) {

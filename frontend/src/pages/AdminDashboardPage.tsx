@@ -96,10 +96,10 @@ const AdminDashboardPage: React.FC = () => {
 
         // Hacer peticiones con manejo de errores individual
         const requests = [
-          axios.get('http://127.0.0.1:8000/api/agentes/', { headers }),
-          axios.get('http://127.0.0.1:8000/api/polizas/', { headers }),
-          axios.get('http://127.0.0.1:8000/api/siniestros/', { headers }),
-          axios.get('http://127.0.0.1:8000/api/clientes/', { headers })
+          axios.get('https://proyecto-univida2.onrender.com/api/agentes/', { headers }),
+          axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers }),
+          axios.get('https://proyecto-univida2.onrender.com/api/siniestros/', { headers }),
+          axios.get('https://proyecto-univida2.onrender.com/api/clientes/', { headers })
         ];
 
         const responses = await Promise.allSettled(requests);

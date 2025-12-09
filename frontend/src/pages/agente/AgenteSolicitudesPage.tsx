@@ -42,7 +42,7 @@ const AgenteSolicitudesPage: React.FC = () => {
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
       
       // Filtramos solo las que están en cotización (y opcionalmente canceladas si quieres verlas)
       const filtradas = response.data.filter((p: any) => 
@@ -74,7 +74,7 @@ const AgenteSolicitudesPage: React.FC = () => {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
           
-          await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/`, {
+          await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${polizaId}/`, {
               estado: 'pendiente_pago', // Pasa a pendiente de pago (y genera factura en backend)
           }, { headers });
 
@@ -94,7 +94,7 @@ const AgenteSolicitudesPage: React.FC = () => {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
           
-          await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/`, {
+          await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${polizaId}/`, {
               estado: 'rechazada', 
           }, { headers });
 

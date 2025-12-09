@@ -48,7 +48,7 @@ const AdminEditarClientePage: React.FC = () => {
                 }
 
                 const headers = { Authorization: `Bearer ${token}` };
-                const response = await axios.get(`http://127.0.0.1:8000/api/clientes/${id}/`, { headers });
+                const response = await axios.get(`https://proyecto-univida2.onrender.com/api/clientes/${id}/`, { headers });
                 setCliente(response.data);
                 
                 // Llenar el formulario con los datos del cliente
@@ -100,7 +100,7 @@ const AdminEditarClientePage: React.FC = () => {
                 estado_salud: values.estado_salud
             };
 
-            await axios.patch(`http://127.0.0.1:8000/api/clientes/${id}/editar/`, datosActualizacion, { headers });
+            await axios.patch(`https://proyecto-univida2.onrender.com/api/clientes/${id}/editar/`, datosActualizacion, { headers });
             
             message.success('Cliente actualizado exitosamente.');
             navigate('/admin-clientes');

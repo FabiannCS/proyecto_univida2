@@ -27,13 +27,13 @@ const AgenteDetallePolizaPage: React.FC = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // 1. Cargar Póliza
-        const resPoliza = await axios.get(`http://127.0.0.1:8000/api/polizas/${id}/`, { headers });
+        const resPoliza = await axios.get(`https://proyecto-univida2.onrender.com/api/polizas/${id}/`, { headers });
         setPoliza(resPoliza.data);
 
         // 2. Cargar Pagos de esta póliza (Filtrando facturas)
         // Nota: Esto asume que tienes un endpoint para ver pagos o facturas de una póliza
         // Si no, el agente lo ve en la sección de "Caja". Aquí mostramos lo básico.
-        const resFacturas = await axios.get(`http://127.0.0.1:8000/api/facturas/?poliza_id=${id}`, { headers });
+        const resFacturas = await axios.get(`https://proyecto-univida2.onrender.com/api/facturas/?poliza_id=${id}`, { headers });
         setPagos(resFacturas.data);
 
       } catch (error) {
@@ -51,7 +51,7 @@ const AgenteDetallePolizaPage: React.FC = () => {
         const token = getToken();
         const headers = { Authorization: `Bearer ${token}` };
         
-        await axios.post('http://127.0.0.1:8000/api/beneficiarios/agregar/', {
+        await axios.post('https://proyecto-univida2.onrender.com/api/beneficiarios/agregar/', {
             ...values,
             poliza: id // El ID de la póliza actual
         }, { headers });
@@ -73,7 +73,7 @@ const AgenteDetallePolizaPage: React.FC = () => {
       try {
         const token = getToken();
         const headers = { Authorization: `Bearer ${token}` };
-        await axios.delete(`http://127.0.0.1:8000/api/beneficiarios/${benId}/eliminar/`, { headers });
+        await axios.delete(`https://proyecto-univida2.onrender.com/api/beneficiarios/${benId}/eliminar/`, { headers });
         message.success('Beneficiario eliminado');
         window.location.reload();
       } catch (error) {

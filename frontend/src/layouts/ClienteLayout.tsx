@@ -38,7 +38,7 @@ const ClienteLayout: React.FC = () => {
 
         // 2. Buscar la póliza del usuario
         // (Hacemos esto aquí porque el Layout no sabe qué póliza se está viendo en el Dashboard)
-        const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const resPolizas = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         const miPoliza = resPolizas.data.find((p: any) => 
             p.cliente_info?.usuario_info?.username === miUsername &&
             p.estado !== 'cancelada'
@@ -58,7 +58,7 @@ const ClienteLayout: React.FC = () => {
         message.loading({ content: 'Generando documento oficial...', key: 'pdfDownload' });
 
         // 4. Descargar PDF
-        const response = await axios.get(`http://127.0.0.1:8000/api/polizas/${miPoliza.id}/pdf/`, {
+        const response = await axios.get(`https://proyecto-univida2.onrender.com/api/polizas/${miPoliza.id}/pdf/`, {
             headers,
             responseType: 'blob', // Importante para archivos
         });

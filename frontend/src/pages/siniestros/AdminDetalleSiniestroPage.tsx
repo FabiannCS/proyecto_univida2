@@ -72,7 +72,7 @@ const AdminDetalleSiniestroPage: React.FC = () => {
       }
       
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get(`http://127.0.0.1:8000/api/siniestros/${id}/`, { headers });
+      const response = await axios.get(`https://proyecto-univida2.onrender.com/api/siniestros/${id}/`, { headers });
       setSiniestro(response.data);
       
       // Inicializar el monto de aprobación con el monto reclamado por defecto
@@ -104,7 +104,7 @@ const AdminDetalleSiniestroPage: React.FC = () => {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
 
-          await axios.patch(`http://127.0.0.1:8000/api/siniestros/${id}/`, {
+          await axios.patch(`https://proyecto-univida2.onrender.com/api/siniestros/${id}/`, {
               estado: 'aprobado',
               monto_aprobado: montoAprobacion,
               resolucion: resolucionTexto || 'Siniestro aprobado por administración.'
@@ -132,7 +132,7 @@ const AdminDetalleSiniestroPage: React.FC = () => {
       const token = getToken();
       const headers = { Authorization: `Bearer ${token}` };
 
-      await axios.patch(`http://127.0.0.1:8000/api/siniestros/${id}/`, {
+      await axios.patch(`https://proyecto-univida2.onrender.com/api/siniestros/${id}/`, {
         estado: 'rechazado',
         resolucion: 'Siniestro rechazado por incumplimiento de condiciones.'
       }, { headers });

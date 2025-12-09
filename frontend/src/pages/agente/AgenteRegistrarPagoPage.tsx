@@ -33,12 +33,12 @@ const AgenteRegistrarPagoPage: React.FC = () => {
         const headers = { Authorization: `Bearer ${token}` };
         
         // Cargamos pólizas para el buscador
-        const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const resPolizas = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         setPolizas(resPolizas.data);
 
         // Cargamos TODAS las facturas del sistema (o del agente si el backend filtra)
         // Nota: Asegúrate de que tu backend /api/facturas/ devuelva la lista completa si no pasas filtros
-        const resFacturas = await axios.get('http://127.0.0.1:8000/api/facturas/', { headers });
+        const resFacturas = await axios.get('https://proyecto-univida2.onrender.com/api/facturas/', { headers });
         setTodasFacturas(resFacturas.data);
 
     } catch (error) {
@@ -85,7 +85,7 @@ const AgenteRegistrarPagoPage: React.FC = () => {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
           
-          await axios.post('http://127.0.0.1:8000/api/pagos/', {
+          await axios.post('https://proyecto-univida2.onrender.com/api/pagos/', {
               factura: selectedFactura.id,
               ...values
           }, { headers });

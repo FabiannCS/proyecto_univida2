@@ -28,7 +28,7 @@ const AgenteMiPerfilPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       // Llamamos a la nueva API específica para agentes
-      const response = await axios.get('http://127.0.0.1:8000/api/agente/me/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/agente/me/', { headers });
       
       setAgentData(response.data);
       
@@ -62,7 +62,7 @@ const AgenteMiPerfilPage: React.FC = () => {
         const token = getToken();
         const headers = { Authorization: `Bearer ${token}` };
 
-        await axios.patch('http://127.0.0.1:8000/api/agente/me/', values, { headers });
+        await axios.patch('https://proyecto-univida2.onrender.com/api/agente/me/', values, { headers });
         
         message.success('Perfil actualizado correctamente');
         setIsEditModalOpen(false);

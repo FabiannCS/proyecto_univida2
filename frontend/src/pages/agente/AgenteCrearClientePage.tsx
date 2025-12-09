@@ -33,7 +33,7 @@ const AgenteCrearClientePage: React.FC = () => {
             // Si usas el de admin (/api/clientes/), asegúrate de que tu serializer maneje la creación de Usuario + Cliente.
             // Para simplificar y reutilizar lógica, usaremos /api/clientes/ (que debería tener esa lógica).
             
-            await axios.post('http://127.0.0.1:8000/api/clientes/', formattedData, { headers });
+            await axios.post('https://proyecto-univida2.onrender.com/api/clientes/', formattedData, { headers });
             
             message.success('Cliente registrado exitosamente.');
             navigate('/agente-clientes'); 

@@ -47,7 +47,7 @@ const AdminListarSiniestrosPage: React.FC = () => {
       
       const headers = { Authorization: `Bearer ${token}` };
       // Llama al endpoint de siniestros (de tu views.py)
-      const response = await axios.get('http://127.0.0.1:8000/api/siniestros/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/siniestros/', { headers });
       setSiniestros(response.data);
       
     } catch (error: any) {

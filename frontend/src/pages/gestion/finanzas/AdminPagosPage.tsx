@@ -22,7 +22,7 @@ const AdminPagosPage: React.FC = () => {
       const token = getToken();
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get('http://127.0.0.1:8000/api/pagos/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/pagos/', { headers });
       setPagos(response.data);
     } catch (error) {
       console.error(error);

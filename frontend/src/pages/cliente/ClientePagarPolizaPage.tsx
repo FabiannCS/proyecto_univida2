@@ -30,14 +30,14 @@ const ClientePagarPolizaPage: React.FC = () => {
         const decodedToken: any = jwtDecode(token);
 
         // Buscar Póliza y Factura (Igual que antes)
-        const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const resPolizas = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         const miPoliza = resPolizas.data.find((p: any) => 
             p.cliente_info?.usuario_info?.username === decodedToken.username &&
             p.estado !== 'cancelada'
         );
 
         if (miPoliza) {
-            const resFacturas = await axios.get(`http://127.0.0.1:8000/api/facturas/?poliza_id=${miPoliza.id}`, { headers });
+            const resFacturas = await axios.get(`https://proyecto-univida2.onrender.com/api/facturas/?poliza_id=${miPoliza.id}`, { headers });
             const pendiente = resFacturas.data.find((f: any) => f.estado === 'pendiente' || f.estado === 'vencida');
             setFacturaPendiente(pendiente);
             
@@ -59,7 +59,7 @@ const ClientePagarPolizaPage: React.FC = () => {
       try {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
-          const response = await axios.post('http://127.0.0.1:8000/api/pagos/iniciar-qr/', { 
+          const response = await axios.post('https://proyecto-univida2.onrender.com/api/pagos/iniciar-qr/', { 
               factura_id: facturaId 
           }, { headers });
           
@@ -81,7 +81,7 @@ const ClientePagarPolizaPage: React.FC = () => {
               try {
                   const token = getToken();
                   const headers = { Authorization: `Bearer ${token}` };
-                  const res = await axios.get(`http://127.0.0.1:8000/api/pagos/estado/${pagoId}/`, { headers });
+                  const res = await axios.get(`https://proyecto-univida2.onrender.com/api/pagos/estado/${pagoId}/`, { headers });
                   
                   if (res.data.status === 'completado') {
                       clearInterval(interval);

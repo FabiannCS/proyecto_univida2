@@ -39,7 +39,7 @@ const AdminGestionAgentesPage: React.FC = () => {
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get('http://127.0.0.1:8000/api/agentes/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/agentes/', { headers });
       
       // Separar agentes activos e inactivos
       const activos = response.data.filter((agente: Agente) => agente.is_active !== false);
@@ -75,7 +75,7 @@ const AdminGestionAgentesPage: React.FC = () => {
       }
       const headers = { Authorization: `Bearer ${token}` };
 
-      await axios.delete(`http://127.0.0.1:8000/api/agentes/${agenteId}/eliminar/`, { headers });
+      await axios.delete(`https://proyecto-univida2.onrender.com/api/agentes/${agenteId}/eliminar/`, { headers });
       message.success(`Agente ${agenteNombre} desactivado correctamente.`);
       fetchAgentes(); // Recargar la lista
     } catch (error: any) {
@@ -99,7 +99,7 @@ const AdminGestionAgentesPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // Llamar a una API para reactivar (necesitarás crearla en el backend)
-      await axios.patch(`http://127.0.0.1:8000/api/agentes/${agenteId}/reactivar/`, {}, { headers });
+      await axios.patch(`https://proyecto-univida2.onrender.com/api/agentes/${agenteId}/reactivar/`, {}, { headers });
       message.success(`Agente ${agenteNombre} reactivado correctamente.`);
       fetchAgentes(); // Recargar la lista
     } catch (error: any) {

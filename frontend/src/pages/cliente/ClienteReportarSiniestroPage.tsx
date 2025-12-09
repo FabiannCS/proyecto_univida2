@@ -34,7 +34,7 @@ const ClienteReportarSiniestroPage: React.FC = () => {
         const decodedToken: any = jwtDecode(token);
         
         // Idealmente: GET /api/mis-polizas/
-        const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const response = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         
         // Filtramos las pólizas de este usuario
         const misPolizas = response.data.filter((p: any) => 
@@ -67,7 +67,7 @@ const ClienteReportarSiniestroPage: React.FC = () => {
         // documentos: ... (aquí iría la lógica de archivos si el backend lo soporta)
       };
 
-      await axios.post('http://127.0.0.1:8000/api/siniestros/', datosSiniestro, { headers });
+      await axios.post('https://proyecto-univida2.onrender.com/api/siniestros/', datosSiniestro, { headers });
       
       message.success('Siniestro reportado correctamente. Un agente se contactará contigo.');
       navigate('/mi-poliza');

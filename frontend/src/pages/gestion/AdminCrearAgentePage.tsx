@@ -31,7 +31,7 @@ const AdminCrearAgentePage: React.FC = () => {
             const headers = { Authorization: `Bearer ${token}` };
 
             // Hacemos la petición POST a la API de creación
-            await axios.post('http://127.0.0.1:8000/api/agentes/crear/', values, { headers });
+            await axios.post('https://proyecto-univida2.onrender.com/api/agentes/crear/', values, { headers });
             
             message.success('Agente creado exitosamente.');
             form.resetFields(); // Limpia el formulario

@@ -40,7 +40,7 @@ const AdminEditarAgentePage: React.FC = () => {
                 const headers = { Authorization: `Bearer ${token}` };
 
                 // Llama a la API para obtener los datos actuales
-                const response = await axios.get(`http://127.0.0.1:8000/api/agentes/${id}/`, { headers });
+                const response = await axios.get(`https://proyecto-univida2.onrender.com/api/agentes/${id}/`, { headers });
                 
                 // Rellena el formulario
                 form.setFieldsValue({
@@ -71,7 +71,7 @@ const AdminEditarAgentePage: React.FC = () => {
 
             // CORRECCIÓN: Usamos PATCH en lugar de PUT
             // En tu código veo esto:
-            await axios.patch(`http://127.0.0.1:8000/api/agentes/${id}/editar/`, values, { headers });
+            await axios.patch(`https://proyecto-univida2.onrender.com/api/agentes/${id}/editar/`, values, { headers });
             
             message.success('Agente actualizado exitosamente.');
             navigate('/admin-agentes'); 

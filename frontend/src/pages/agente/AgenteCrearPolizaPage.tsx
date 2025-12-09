@@ -65,7 +65,7 @@ const AgenteCrearPolizaPage: React.FC = () => {
             try {
                 const token = getToken();
                 const headers = { Authorization: `Bearer ${token}` };
-                const response = await axios.get('http://127.0.0.1:8000/api/clientes/', { headers });
+                const response = await axios.get('https://proyecto-univida2.onrender.com/api/clientes/', { headers });
                 setClientes(response.data);
             } catch (error) { message.error('Error al cargar lista de clientes'); }
         };
@@ -95,7 +95,7 @@ const AgenteCrearPolizaPage: React.FC = () => {
                 referencia_pago: values.referencia_pago
             };
 
-            await axios.post('http://127.0.0.1:8000/api/polizas/', datosPoliza, { headers });
+            await axios.post('https://proyecto-univida2.onrender.com/api/polizas/', datosPoliza, { headers });
             
             message.success(pagoInmediato ? '¡Póliza emitida y activada!' : 'Póliza creada (Pendiente de Pago).');
             navigate('/agente-polizas');

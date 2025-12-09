@@ -121,7 +121,7 @@ const ClienteSolicitarPolizaPage: React.FC = () => {
         observaciones: `${values.observaciones || ''} - Frecuencia: ${frecuenciaPago.toUpperCase()}`
       };
 
-      await axios.post('http://127.0.0.1:8000/api/polizas/solicitar/', datosSolicitud, { headers });
+      await axios.post('https://proyecto-univida2.onrender.com/api/polizas/solicitar/', datosSolicitud, { headers });
 
       message.success('¡Solicitud enviada con éxito!');
       navigate('/mi-poliza');

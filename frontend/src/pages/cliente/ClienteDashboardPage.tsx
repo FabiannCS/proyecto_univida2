@@ -58,14 +58,14 @@ const ClienteDashboardPage: React.FC = () => {
         const miUsername = decodedToken.username;
 
         // 1. Cargar Pólizas
-        const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+        const resPolizas = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
         const miPolizaEncontrada = resPolizas.data.find((p: any) => 
             p.cliente_info?.usuario_info?.username === miUsername &&
             p.estado !== 'cancelada'
         );
         
         // 2. Cargar Siniestros (Independiente de si hay póliza activa o no, queremos ver el historial)
-        const resSiniestros = await axios.get('http://127.0.0.1:8000/api/siniestros/', { headers });
+        const resSiniestros = await axios.get('https://proyecto-univida2.onrender.com/api/siniestros/', { headers });
         const misSiniestros = resSiniestros.data.filter((s: any) => 
             s.poliza_info?.cliente_info?.usuario_info?.username === miUsername
         );
@@ -75,11 +75,11 @@ const ClienteDashboardPage: React.FC = () => {
             setPoliza(miPolizaEncontrada);
 
             // 3. Cargar Pagos y Facturas
-            const resPagos = await axios.get('http://127.0.0.1:8000/api/pagos/', { headers });
+            const resPagos = await axios.get('https://proyecto-univida2.onrender.com/api/pagos/', { headers });
             const misPagos = resPagos.data.filter((p: any) => p.factura_info?.poliza_id === miPolizaEncontrada.id);
             setPagos(misPagos);
             
-            const resFacturas = await axios.get(`http://127.0.0.1:8000/api/facturas/?poliza_id=${miPolizaEncontrada.id}`, { headers });
+            const resFacturas = await axios.get(`https://proyecto-univida2.onrender.com/api/facturas/?poliza_id=${miPolizaEncontrada.id}`, { headers });
             setFacturas(resFacturas.data);
         } else {
             setPoliza(null);
@@ -94,7 +94,7 @@ const ClienteDashboardPage: React.FC = () => {
     if (!window.confirm("¿Estás seguro de cancelar?")) return;
     setActionLoading(true);
     try {
-        await axios.patch(`http://127.0.0.1:8000/api/polizas/${poliza!.id}/`, { estado: 'cancelada' }, { headers: { Authorization: `Bearer ${getToken()}` } });
+        await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${poliza!.id}/`, { estado: 'cancelada' }, { headers: { Authorization: `Bearer ${getToken()}` } });
         window.location.reload(); 
     } catch (e) { message.error('No se pudo cancelar.'); } 
     finally { setActionLoading(false); }

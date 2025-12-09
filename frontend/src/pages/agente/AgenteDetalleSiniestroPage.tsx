@@ -24,7 +24,7 @@ const AgenteDetalleSiniestroPage: React.FC = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // Llamamos a la API de detalle (la misma que usa el Admin sirve)
-        const response = await axios.get(`http://127.0.0.1:8000/api/siniestros/${id}/`, { headers });
+        const response = await axios.get(`https://proyecto-univida2.onrender.com/api/siniestros/${id}/`, { headers });
         setSiniestro(response.data);
 
       } catch (error) {

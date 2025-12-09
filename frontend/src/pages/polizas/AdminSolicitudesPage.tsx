@@ -30,13 +30,13 @@ const AdminSolicitudesPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // Cargar Pólizas
-      const resPolizas = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+      const resPolizas = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
       // Filtrar solo las que están en cotización (sin asignar o pendientes)
       const pendientes = resPolizas.data.filter((p: any) => p.estado === 'cotizacion');
       setSolicitudes(pendientes);
 
       // Cargar Agentes (para el select)
-      const resAgentes = await axios.get('http://127.0.0.1:8000/api/agentes/', { headers });
+      const resAgentes = await axios.get('https://proyecto-univida2.onrender.com/api/agentes/', { headers });
       // Filtramos solo agentes activos
       const agentesActivos = resAgentes.data.filter((a: any) => a.estado === 'activo');
       setAgentes(agentesActivos);
@@ -66,7 +66,7 @@ const AdminSolicitudesPage: React.FC = () => {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
           
-          await axios.patch(`http://127.0.0.1:8000/api/polizas/${selectedSolicitud.id}/`, {
+          await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${selectedSolicitud.id}/`, {
               estado: 'pendiente_pago', // Al asignar, la aceptamos y generamos factura
               agente: selectedAgente    // Enviamos el ID del agente seleccionado
           }, { headers });

@@ -28,7 +28,7 @@ function LoginPage() {
         setError('');
         setLoading(true);
 
-        axios.post('http://127.0.0.1:8000/api/token/', {
+        axios.post('https://proyecto-univida2.onrender.com/api/token/', {
             username: values.username,
             password: values.password
         })

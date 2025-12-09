@@ -65,7 +65,7 @@ const ReportarSiniestroPage: React.FC = () => {
       }
 
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
       
       const polizasActivas = response.data.filter((poliza: Poliza) => 
         poliza.estado === 'activa'
@@ -130,7 +130,7 @@ const ReportarSiniestroPage: React.FC = () => {
     };
       console.log('Enviando datos de siniestro:', siniestroData);
 
-      const response = await axios.post('http://127.0.0.1:8000/api/siniestros/', siniestroData, { headers });
+      const response = await axios.post('https://proyecto-univida2.onrender.com/api/siniestros/', siniestroData, { headers });
       
       message.success('Siniestro reportado exitosamente. Será revisado por nuestro equipo.');
       console.log('Respuesta del servidor:', response.data);

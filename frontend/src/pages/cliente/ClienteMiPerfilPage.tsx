@@ -33,7 +33,7 @@ const ClienteMiPerfilPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       // Llamamos al nuevo endpoint específico del perfil
-      const response = await axios.get('http://127.0.0.1:8000/api/cliente/me/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/cliente/me/', { headers });
       
       setUserData(response.data);
       
@@ -73,7 +73,7 @@ const ClienteMiPerfilPage: React.FC = () => {
             fecha_nacimiento: values.fecha_nacimiento ? values.fecha_nacimiento.format('YYYY-MM-DD') : null
         };
 
-        await axios.patch('http://127.0.0.1:8000/api/cliente/me/', dataToSend, { headers });
+        await axios.patch('https://proyecto-univida2.onrender.com/api/cliente/me/', dataToSend, { headers });
         
         message.success('Datos actualizados correctamente');
         setIsEditModalOpen(false);
@@ -95,7 +95,7 @@ const ClienteMiPerfilPage: React.FC = () => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         try {
-            await axios.post('http://127.0.0.1:8000/api/cliente/change-password/', {
+            await axios.post('https://proyecto-univida2.onrender.com/api/cliente/change-password/', {
                 current_password: values.current_password,
                 new_password: values.new_password
             }, { headers });

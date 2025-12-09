@@ -42,7 +42,7 @@ const AgenteClientesPage: React.FC = () => {
       const token = getToken();
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get('http://127.0.0.1:8000/api/clientes/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/clientes/', { headers });
       setClientes(response.data);
     } catch (error) {
       console.error(error);
@@ -94,7 +94,7 @@ const AgenteClientesPage: React.FC = () => {
               }
           };
 
-          await axios.patch(`http://127.0.0.1:8000/api/clientes/${editingClient.id}/`, dataToSend, { headers });
+          await axios.patch(`https://proyecto-univida2.onrender.com/api/clientes/${editingClient.id}/`, dataToSend, { headers });
 
           message.success('Cliente actualizado correctamente');
           setIsModalOpen(false);
@@ -114,7 +114,7 @@ const AgenteClientesPage: React.FC = () => {
           const token = getToken();
           const headers = { Authorization: `Bearer ${token}` };
           
-          await axios.patch(`http://127.0.0.1:8000/api/clientes/${cliente.id}/toggle-estado/`, {
+          await axios.patch(`https://proyecto-univida2.onrender.com/api/clientes/${cliente.id}/toggle-estado/`, {
               is_active: activar 
           }, { headers });
           

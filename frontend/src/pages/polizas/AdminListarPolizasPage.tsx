@@ -46,7 +46,7 @@ const AdminListarPolizasPage: React.FC = () => {
       }
       
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get('http://127.0.0.1:8000/api/polizas/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/polizas/', { headers });
       
       const polizasReales = response.data.filter((p: any) => p.estado !== 'cotizacion');
       setPolizas(polizasReales);
@@ -69,7 +69,7 @@ const AdminListarPolizasPage: React.FC = () => {
       const token = getToken();
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/`, { estado: 'activa' }, { headers });
+      await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${polizaId}/`, { estado: 'activa' }, { headers });
       message.success('Póliza activada correctamente');
       fetchPolizas();
     } catch (error) { message.error('Error al activar'); }
@@ -80,7 +80,7 @@ const AdminListarPolizasPage: React.FC = () => {
       const token = getToken();
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/`, { estado: 'cancelada' }, { headers });
+      await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${polizaId}/`, { estado: 'cancelada' }, { headers });
       message.success('Póliza cancelada correctamente');
       fetchPolizas();
     } catch (error) { message.error('Error al cancelar'); }
@@ -92,7 +92,7 @@ const AdminListarPolizasPage: React.FC = () => {
       const token = getToken();
       if (!token) return;
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.patch(`http://127.0.0.1:8000/api/polizas/${polizaId}/`, { estado: 'inactiva' }, { headers });
+      await axios.patch(`https://proyecto-univida2.onrender.com/api/polizas/${polizaId}/`, { estado: 'inactiva' }, { headers });
       message.success('Póliza desactivada (Inactiva)');
       fetchPolizas();
     } catch (error) { message.error('Error al desactivar'); }

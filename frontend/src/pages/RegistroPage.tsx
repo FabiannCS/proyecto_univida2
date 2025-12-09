@@ -22,7 +22,7 @@ const RegistroPage: React.FC = () => {
                 ? values.fecha_nacimiento.format('YYYY-MM-DD') 
                 : null;
             // Llamamos a la API pública que acabamos de crear
-            await axios.post('http://127.0.0.1:8000/api/registro/', {
+            await axios.post('https://proyecto-univida2.onrender.com/api/registro/', {
                 username: values.username,
                 password: values.password,
                 email: values.email,

@@ -46,7 +46,7 @@ const AdminGestionClientesPage: React.FC = () => {
       }
 
       const headers = { Authorization: `Bearer ${token}` };
-      const response = await axios.get('http://127.0.0.1:8000/api/clientes/', { headers });
+      const response = await axios.get('https://proyecto-univida2.onrender.com/api/clientes/', { headers });
       
       // Separar clientes activos e inactivos
       const activos = response.data.filter((cliente: Cliente) => cliente.usuario_info.is_active !== false);
@@ -79,7 +79,7 @@ const AdminGestionClientesPage: React.FC = () => {
       }
 
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(`http://127.0.0.1:8000/api/clientes/${clienteId}/eliminar/`, { headers });
+      await axios.delete(`https://proyecto-univida2.onrender.com/api/clientes/${clienteId}/eliminar/`, { headers });
       
       message.success(`Cliente ${clienteNombre} desactivado correctamente.`);
       fetchClientes(); // Recargar la lista
@@ -103,7 +103,7 @@ const AdminGestionClientesPage: React.FC = () => {
       }
 
       const headers = { Authorization: `Bearer ${token}` };
-      await axios.patch(`http://127.0.0.1:8000/api/clientes/${clienteId}/reactivar/`, {}, { headers });
+      await axios.patch(`https://proyecto-univida2.onrender.com/api/clientes/${clienteId}/reactivar/`, {}, { headers });
       
       message.success(`Cliente ${clienteNombre} reactivado correctamente.`);
       fetchClientes(); // Recargar la lista

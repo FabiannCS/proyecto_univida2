@@ -51,7 +51,7 @@ const AdminCrearClientePage: React.FC = () => {
             console.log('🚀 Enviando datos al backend:', clienteData);
 
             const response = await axios.post(
-                'http://127.0.0.1:8000/api/clientes/crear/', 
+                'https://proyecto-univida2.onrender.com/api/clientes/crear/', 
                 clienteData, 
                 { headers }
             );

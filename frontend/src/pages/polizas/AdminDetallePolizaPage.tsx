@@ -69,7 +69,7 @@ const AdminDetallePolizaPage: React.FC = () => {
         
         const headers = { Authorization: `Bearer ${token}` };
         // Llama al endpoint de detalle de póliza
-        const response = await axios.get(`http://127.0.0.1:8000/api/polizas/${id}/`, { headers });
+        const response = await axios.get(`https://proyecto-univida2.onrender.com/api/polizas/${id}/`, { headers });
         setPoliza(response.data);
         
       } catch (error: any) {

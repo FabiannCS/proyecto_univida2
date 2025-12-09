@@ -67,8 +67,8 @@ const AdminCrearPolizaPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [clientesRes, agentesRes] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/clientes/', { headers }),
-        axios.get('http://127.0.0.1:8000/api/agentes/', { headers }) // ← Corregí el puerto
+        axios.get('https://proyecto-univida2.onrender.com/api/clientes/', { headers }),
+        axios.get('https://proyecto-univida2.onrender.com/api/agentes/', { headers }) // ← Corregí el puerto
       ]);
 
       setClientes(clientesRes.data);
@@ -135,7 +135,7 @@ const handleFormSubmit = async (values: any) => {
 
     console.log('Enviando datos de póliza CORREGIDOS:', polizaData);
 
-    const response = await axios.post('http://127.0.0.1:8000/api/polizas/', polizaData, { headers });
+    const response = await axios.post('https://proyecto-univida2.onrender.com/api/polizas/', polizaData, { headers });
     
     message.success('Póliza creada exitosamente.');
     form.resetFields();
