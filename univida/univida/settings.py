@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,11 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-cqk%^c!@d3w7n-)ezxv)nc7&chc)d-d0sv!64jnw*z@hl0zjvf'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = 'RENDER' not in os.environ
 
-ALLOWED_HOSTS = [
-    
-]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -53,7 +53,9 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # ← AGREGAR ESTA LÍNEA
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -84,14 +86,11 @@ WSGI_APPLICATION = 'univida.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'univida',  # Nueva BD con nombre diferente
-        'USER': 'Support',
-        'PASSWORD': 'soporte123',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        # Usa tu base local si no está en la nube
+        default='sqlite:///db.sqlite3', 
+        conn_max_age=600
+    )
 }
 
 # Password validation
@@ -128,7 +127,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -149,12 +151,7 @@ REST_FRAMEWORK = {
 }
 
 # Configuración CORS (permitir frontend)
-CORS_ALLOWED_ORIGINS = [
-
-    "http://localhost:3000",  # React típico
-    "http://127.0.0.1:3000",  # React alternativo
-    
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 
